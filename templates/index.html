@@ -1,10 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web & Audio Converter Tools</title>
+    <title>Converter Suite Pro | Premium Web & Audio Tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
     <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary: #ec4899;
+            --bg-dark: #0f172a;
+            --glass: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,10 +31,15 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.15) 0px, transparent 50%);
+            color: var(--text-main);
             min-height: 100vh;
-            padding: 20px;
+            padding: 2rem 1rem;
+            line-height: 1.5;
         }
 
         .container {
@@ -23,207 +47,312 @@
             margin: 0 auto;
         }
 
-        h1 {
+        header {
             text-align: center;
-            color: white;
-            margin-bottom: 40px;
-            font-size: 2.5rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 4rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #818cf8, #f472b6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            letter-spacing: -0.025em;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
         .tools-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-            gap: 30px;
-            margin-bottom: 40px;
+            gap: 2.5rem;
         }
 
         .tool-card {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease;
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
 
         .tool-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-8px);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.2);
         }
 
-        .tool-card h2 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 10px;
+        .tool-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 1.5rem;
         }
 
         label {
             display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         input[type="text"],
         input[type="url"],
-        textarea,
-        select {
+        input[type="number"],
+        textarea {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 0.875rem 1.25rem;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s;
         }
 
         input:focus,
-        textarea:focus,
-        select:focus {
+        textarea:focus {
             outline: none;
-            border-color: #667eea;
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 150px;
-            font-family: 'Courier New', monospace;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
         }
 
         .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
             color: white;
             border: none;
-            padding: 14px 28px;
-            border-radius: 8px;
-            font-size: 16px;
+            border-radius: 12px;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            width: 100%;
+            transition: all 0.3s;
+            gap: 0.5rem;
         }
 
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            filter: brightness(1.1);
+            transform: scale(1.02);
         }
 
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
         }
 
-        .progress-container {
-            margin-top: 20px;
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-error {
+            background: var(--error);
+        }
+
+        /* Chapter Styles */
+        .chapter-section {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            border: 1px solid var(--glass-border);
+        }
+
+        .chapter-controls {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .chapter-entry {
+            display: grid;
+            grid-template-columns: 1fr 100px 48px;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .remove-chapter-btn {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .remove-chapter-btn:hover {
+            background: var(--error);
+            color: white;
+        }
+
+        /* Batch Import Area */
+        .batch-import-area {
+            margin-top: 1rem;
             display: none;
         }
 
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            background: #e0e0e0;
-            border-radius: 10px;
+        .batch-import-area.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        /* FFmpeg Command Area */
+        .command-preview {
+            background: #000;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-top: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            position: relative;
+            border: 1px solid var(--glass-border);
+        }
+
+        .command-preview header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+
+        .command-preview code {
+            color: #818cf8;
+            word-break: break-all;
+            display: block;
+            line-height: 1.6;
+        }
+
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        /* Utility */
+        .file-drop-zone {
+            border: 2px dashed var(--glass-border);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-drop-zone:hover,
+        .file-drop-zone.active {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .progress-container {
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .progress-track {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 999px;
             overflow: hidden;
         }
 
-        .progress-fill {
+        .progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
             width: 0%;
             transition: width 0.3s ease;
         }
 
-        .status-message {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 5px;
-            text-align: center;
-            font-weight: 500;
-        }
-
-        .status-message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status-message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
+        .status-badge {
             display: inline-block;
-            width: 100%;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.875rem;
+            margin-top: 1rem;
         }
 
-        .file-input-wrapper input[type=file] {
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .file-input-label {
-            display: block;
-            padding: 12px;
-            background: #f8f9fa;
-            border: 2px dashed #667eea;
-            border-radius: 8px;
-            text-align: center;
-            color: #667eea;
-            font-weight: 500;
-            transition: all 0.3s;
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
-        .file-input-wrapper:hover .file-input-label {
-            background: #e9ecef;
-        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
 
-        .chapter-entry {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-            align-items: center;
-        }
-
-        .chapter-entry input {
-            flex: 1;
-        }
-
-        .chapter-entry button {
-            padding: 8px 16px;
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .add-chapter-btn {
-            margin-top: 10px;
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 100%;
-        }
-
-        .add-chapter-btn:hover {
-            background: #218838;
+            to {
+                opacity: 1;
+            }
         }
 
         @media (max-width: 768px) {
@@ -232,276 +361,367 @@
             }
 
             h1 {
-                font-size: 2rem;
+                font-size: 2.5rem;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <h1>Web & Audio Converter Tools</h1>
+        <header>
+            <h1>Converter Suite Pro</h1>
+            <p>Professional grade tools for web archiving and audio conversion.</p>
+        </header>
 
         <div class="tools-grid">
-            <!-- Website to ZIP Tool -->
-            <div class="tool-card">
+            <!-- Website to ZIP -->
+            <section class="tool-card">
+                <div class="tool-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                    </svg>
+                </div>
                 <h2>Website to ZIP</h2>
-                <p style="margin-bottom: 20px; color: #666;">
-                    Enter a website URL to download and convert it to a ZIP file.
-                </p>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">Archive complete websites for offline viewing
+                    with all assets preserved.</p>
 
                 <form id="websiteForm">
                     <div class="form-group">
-                        <label for="websiteUrl">Website URL:</label>
-                        <input type="url" id="websiteUrl" name="websiteUrl"
-                               placeholder="https://example.com" required>
+                        <label for="websiteUrl">Target URL</label>
+                        <input type="url" id="websiteUrl" placeholder="https://example.com" required>
                     </div>
 
-                    <div class="form-group">
-                        <button type="submit" class="btn" id="websiteSubmitBtn">
-                            Download & Create ZIP
-                        </button>
-                    </div>
+                    <button type="submit" class="btn" id="websiteSubmitBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M21 15v4c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                        </svg>
+                        Archive Website
+                    </button>
                 </form>
 
                 <div class="progress-container" id="websiteProgress">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="websiteProgressFill"></div>
+                    <div class="progress-track">
+                        <div class="progress-bar" id="websiteProgressFill"></div>
                     </div>
-                    <div class="status-message" id="websiteStatus"></div>
+                    <div id="websiteStatus" class="status-badge"></div>
                 </div>
-            </div>
+            </section>
 
-            <!-- MP3 to M4B Tool -->
-            <div class="tool-card">
-                <h2>MP3 to M4B with Chapters</h2>
-                <p style="margin-bottom: 20px; color: #666;">
-                    Upload an MP3 file and add chapter markers to create an M4B audiobook.
-                </p>
+            <!-- MP3 to M4B -->
+            <section class="tool-card">
+                <div class="tool-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M9 18V5l12-2v13M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm12-3a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                    </svg>
+                </div>
+                <h2>MP3 to Audiobook</h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">Convert MP3s to M4B with chapters for the
+                    perfect listening experience.</p>
 
-                <form id="mp3Form" enctype="multipart/form-data">
+                <form id="mp3Form">
                     <div class="form-group">
-                        <label for="mp3File">MP3 File:</label>
-                        <div class="file-input-wrapper">
-                            <input type="file" id="mp3File" name="mp3File" accept=".mp3,audio/mpeg" required>
-                            <label for="mp3File" class="file-input-label" id="fileLabel">
-                                Choose MP3 file
-                            </label>
+                        <label>Audio File</label>
+                        <div class="file-drop-zone" id="dropZone">
+                            <input type="file" id="mp3File" accept=".mp3" style="display: none;">
+                            <p id="fileDisplay">Click or drag MP3 here</p>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Chapters (optional):</label>
+                    <div class="chapter-section">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <label style="margin: 0;">Chapter Markers</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button type="button" class="btn btn-secondary"
+                                    style="width: auto; padding: 6px 12px; font-size: 0.75rem;"
+                                    id="toggleBatchBtn">Batch Import</button>
+                                <button type="button" class="btn btn-secondary"
+                                    style="width: auto; padding: 6px 12px; font-size: 0.75rem;"
+                                    id="exportChaptersBtn">Export .txt</button>
+                            </div>
+                        </div>
+
                         <div id="chaptersContainer"></div>
-                        <button type="button" class="add-chapter-btn" id="addChapterBtn">
-                            + Add Chapter
-                        </button>
-                        <small style="display: block; margin-top: 10px; color: #666;">
-                            Format: Title (one per line). Leave empty for no chapters.
-                        </small>
+
+                        <div class="batch-import-area" id="batchArea">
+                            <textarea id="batchInput"
+                                placeholder="Paste chapter.txt content here...&#10;&#10;[CHAPTER]&#10;TIMEBASE=1/1000&#10;START=0&#10;title=Intro"
+                                style="min-height: 200px; font-family: monospace; font-size: 13px;"></textarea>
+                            <button type="button" class="btn btn-secondary" style="margin-top: 0.5rem;"
+                                id="applyBatchBtn">Apply Batch Data</button>
+                        </div>
+
+                        <button type="button" class="btn btn-secondary" style="margin-top: 1rem;" id="addChapterBtn">+
+                            Add Manual Entry</button>
                     </div>
 
-                    <div class="form-group">
-                        <button type="submit" class="btn" id="mp3SubmitBtn">
-                            Convert to M4B
-                        </button>
+                    <div class="command-preview">
+                        <header>
+                            <label style="margin: 0; color: #6366f1;">FFmpeg Code (Self-Service)</label>
+                            <button type="button" class="copy-btn" onclick="copyCommand()">Copy</button>
+                        </header>
+                        <code id="cmdOutput">ffmpeg -i input.mp3 -c:a aac -b:a 64k output.m4b</code>
                     </div>
+
+                    <button type="submit" class="btn" id="mp3SubmitBtn" style="margin-top: 2rem;">
+                        Build Audiobook
+                    </button>
                 </form>
 
                 <div class="progress-container" id="mp3Progress">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="mp3ProgressFill"></div>
+                    <div class="progress-track">
+                        <div class="progress-bar" id="mp3ProgressFill"></div>
                     </div>
-                    <div class="status-message" id="mp3Status"></div>
+                    <div id="mp3Status" class="status-badge"></div>
                 </div>
-            </div>
+            </section>
         </div>
     </div>
 
     <script>
-        // File input label update
-        document.getElementById('mp3File').addEventListener('change', function(e) {
-            const label = document.getElementById('fileLabel');
-            if (e.target.files.length > 0) {
-                label.textContent = e.target.files[0].name;
-            } else {
-                label.textContent = 'Choose MP3 file';
-            }
-        });
-
-        // Chapter management
+        // DOM Elements
+        const websiteForm = document.getElementById('websiteForm');
+        const mp3Form = document.getElementById('mp3Form');
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('mp3File');
+        const fileDisplay = document.getElementById('fileDisplay');
         const chaptersContainer = document.getElementById('chaptersContainer');
         const addChapterBtn = document.getElementById('addChapterBtn');
+        const toggleBatchBtn = document.getElementById('toggleBatchBtn');
+        const batchArea = document.getElementById('batchArea');
+        const batchInput = document.getElementById('batchInput');
+        const applyBatchBtn = document.getElementById('applyBatchBtn');
+        const exportChaptersBtn = document.getElementById('exportChaptersBtn');
+        const cmdOutput = document.getElementById('cmdOutput');
 
-        addChapterBtn.addEventListener('click', function() {
-            const entry = document.createElement('div');
-            entry.className = 'chapter-entry';
-            entry.innerHTML = `
-                <input type="text" placeholder="Chapter title" class="chapter-title" required>
-                <input type="number" placeholder="Start time (seconds)" class="chapter-start" type="number" step="0.1" min="0" required>
-                <button type="button" class="remove-chapter-btn">Remove</button>
-            `;
-            entry.querySelector('.remove-chapter-btn').addEventListener('click', function() {
-                entry.remove();
-            });
-            chaptersContainer.appendChild(entry);
-        });
+        // State
+        let selectedFile = null;
 
-        // Add one default chapter entry
-        addChapterBtn.click();
-
-        // Website to ZIP form submission
-        document.getElementById('websiteForm').addEventListener('submit', async function(e) {
+        // File Selection Logic
+        dropZone.onclick = () => fileInput.click();
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('active'); };
+        dropZone.ondragleave = () => dropZone.classList.remove('active');
+        dropZone.ondrop = (e) => {
             e.preventDefault();
+            dropZone.classList.remove('active');
+            handleFile(e.dataTransfer.files[0]);
+        };
+        fileInput.onchange = (e) => handleFile(e.target.files[0]);
 
-            const url = document.getElementById('websiteUrl').value.trim();
-            const submitBtn = document.getElementById('websiteSubmitBtn');
-            const progressContainer = document.getElementById('websiteProgress');
-            const progressFill = document.getElementById('websiteProgressFill');
-            const statusMessage = document.getElementById('websiteStatus');
-
-            if (!url) {
-                statusMessage.textContent = 'Please enter a URL';
-                statusMessage.className = 'status-message error';
-                progressContainer.style.display = 'block';
-                return;
+        function handleFile(file) {
+            if (file && (file.type === "audio/mpeg" || file.name.toLowerCase().endsWith('.mp3'))) {
+                selectedFile = file;
+                fileDisplay.textContent = file.name;
+                updateCommand();
+            } else {
+                alert("Please select a valid MP3 file.");
             }
+        }
 
-            submitBtn.disabled = true;
-            progressContainer.style.display = 'block';
-            progressFill.style.width = '10%';
-            statusMessage.textContent = 'Starting download...';
-            statusMessage.className = 'status-message';
+        // Chapter Management
+        function createChapterEntry(title = '', start = 0) {
+            const div = document.createElement('div');
+            div.className = 'chapter-entry';
+            div.innerHTML = `
+                <input type="text" class="chap-title" placeholder="Title" value="${title}">
+                <input type="number" class="chap-start" placeholder="Sec" value="${start}">
+                <button type="button" class="remove-chapter-btn">×</button>
+            `;
+
+            div.querySelector('.remove-chapter-btn').onclick = () => {
+                div.remove();
+                updateCommand();
+            };
+
+            div.querySelectorAll('input').forEach(input => {
+                input.oninput = updateCommand;
+            });
+
+            chaptersContainer.appendChild(div);
+            updateCommand();
+        }
+
+        addChapterBtn.onclick = () => createChapterEntry();
+
+        // Batch Import Logic
+        toggleBatchBtn.onclick = () => batchArea.classList.toggle('active');
+
+        applyBatchBtn.onclick = () => {
+            const text = batchInput.value;
+            const chapters = [];
+            const segments = text.split('[CHAPTER]');
+
+            segments.forEach(seg => {
+                const startMatch = seg.match(/START=(\d+)/);
+                const titleMatch = seg.match(/title=(.+)/);
+                if (startMatch && titleMatch) {
+                    chapters.push({
+                        title: titleMatch[1].trim(),
+                        start: parseInt(startMatch[1]) / 1000 // Convert from ms to sec
+                    });
+                }
+            });
+
+            if (chapters.length > 0) {
+                chaptersContainer.innerHTML = '';
+                chapters.forEach(c => createChapterEntry(c.title, c.start));
+                batchArea.classList.remove('active');
+                batchInput.value = '';
+            } else {
+                alert("Could not parse chapters. Make sure you use the FFMetadata format shown in example.");
+            }
+        };
+
+        // Export Chapters logic
+        exportChaptersBtn.onclick = () => {
+            const chapters = getChapters();
+            let output = ';FFMETADATA1\n';
+            chapters.forEach((c, i) => {
+                const nextStart = chapters[i + 1] ? chapters[i + 1].start_time : null;
+                output += `\n[CHAPTER]\nTIMEBASE=1/1000\nSTART=${Math.round(c.start_time * 1000)}\n`;
+                if (nextStart !== null) {
+                    output += `END=${Math.round(nextStart * 1000)}\n`;
+                }
+                output += `title=${c.title}\n`;
+            });
+
+            const blob = new Blob([output], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'chapters.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+
+        // FFmpeg Command Preview
+        function updateCommand() {
+            const fileName = selectedFile ? selectedFile.name : 'input.mp3';
+            const outputName = fileName.replace('.mp3', '.m4b').replace('.MP3', '.m4b');
+            const chapters = getChapters();
+
+            let cmd = `ffmpeg -i "${fileName}" `;
+            if (chapters.length > 0) {
+                cmd += `-i chapters.txt -map_metadata 1 `;
+            }
+            cmd += `-c:a aac -b:a 64k "${outputName}"`;
+
+            cmdOutput.textContent = cmd;
+        }
+
+        function getChapters() {
+            return Array.from(document.querySelectorAll('.chapter-entry')).map(entry => ({
+                title: entry.querySelector('.chap-title').value,
+                start_time: parseFloat(entry.querySelector('.chap-start').value || 0)
+            })).sort((a, b) => a.start_time - b.start_time);
+        }
+
+        function copyCommand() {
+            navigator.clipboard.writeText(cmdOutput.textContent);
+            const copyBtn = document.querySelector('.copy-btn');
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => copyBtn.textContent = 'Copy', 2000);
+        }
+
+        // Form Submissions
+        websiteForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const url = document.getElementById('websiteUrl').value;
+            const btn = document.getElementById('websiteSubmitBtn');
+            const progress = document.getElementById('websiteProgress');
+            const fill = document.getElementById('websiteProgressFill');
+            const status = document.getElementById('websiteStatus');
+
+            btn.disabled = true;
+            progress.style.display = 'block';
+            fill.style.width = '20%';
+            status.textContent = 'Analyzing Site...';
+            status.style.background = 'rgba(99, 102, 241, 0.1)';
 
             try {
-                const response = await fetch('/api/website-to-zip', {
+                const res = await fetch('/api/website-to-zip', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ url: url })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
                 });
 
-                progressFill.style.width = '90%';
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Failed to convert website');
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || 'Failed to convert website');
                 }
 
-                // Get the blob and download
-                const blob = await response.blob();
-                const downloadUrl = window.URL.createObjectURL(blob);
+                fill.style.width = '100%';
+                status.textContent = 'Success!';
+                status.style.background = 'rgba(34, 197, 94, 0.1)';
+
+                const blob = await res.blob();
+                const dUrl = URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = downloadUrl;
-                a.download = response.headers.get('Content-Disposition')
-                    ?.split('filename=')[1]
-                    ?.replace(/"/g, '') || 'website.zip';
-                document.body.appendChild(a);
+                a.href = dUrl;
+                a.download = `archive_${Date.now()}.zip`;
                 a.click();
-                a.remove();
-                window.URL.revokeObjectURL(downloadUrl);
-
-                progressFill.style.width = '100%';
-                statusMessage.textContent = 'Download complete!';
-                statusMessage.className = 'status-message success';
-
-            } catch (error) {
-                progressFill.style.width = '100%';
-                statusMessage.textContent = 'Error: ' + error.message;
-                statusMessage.className = 'status-message error';
+            } catch (err) {
+                status.textContent = 'Error: ' + err.message;
+                status.style.background = 'rgba(239, 68, 68, 0.1)';
             } finally {
-                submitBtn.disabled = false;
-                setTimeout(() => {
-                    progressContainer.style.display = 'none';
-                    progressFill.style.width = '0%';
-                }, 3000);
+                btn.disabled = false;
+                setTimeout(() => progress.style.display = 'none', 5000);
             }
-        });
+        };
 
-        // MP3 to M4B form submission
-        document.getElementById('mp3Form').addEventListener('submit', async function(e) {
+        mp3Form.onsubmit = async (e) => {
             e.preventDefault();
+            if (!selectedFile) return alert("Select a file first");
 
-            const fileInput = document.getElementById('mp3File');
-            const submitBtn = document.getElementById('mp3SubmitBtn');
-            const progressContainer = document.getElementById('mp3Progress');
-            const progressFill = document.getElementById('mp3ProgressFill');
-            const statusMessage = document.getElementById('mp3Status');
+            const btn = document.getElementById('mp3SubmitBtn');
+            const progress = document.getElementById('mp3Progress');
+            const fill = document.getElementById('mp3ProgressFill');
+            const status = document.getElementById('mp3Status');
 
-            if (fileInput.files.length === 0) {
-                statusMessage.textContent = 'Please select an MP3 file';
-                statusMessage.className = 'status-message error';
-                progressContainer.style.display = 'block';
-                return;
-            }
-
-            // Collect chapters
-            const chapters = [];
-            document.querySelectorAll('#chaptersContainer .chapter-entry').forEach(entry => {
-                const title = entry.querySelector('.chapter-title').value.trim();
-                const start = parseFloat(entry.querySelector('.chapter-start').value);
-                if (title && !isNaN(start)) {
-                    chapters.push({ title: title, start_time: start });
-                }
-            });
-
-            // Sort chapters by start time
-            chapters.sort((a, b) => a.start_time - b.start_time);
-
+            const chapters = getChapters();
             const formData = new FormData();
-            formData.append('mp3_file', fileInput.files[0]);
-            if (chapters.length > 0) {
-                formData.append('chapters', JSON.stringify(chapters));
-            }
+            formData.append('mp3_file', selectedFile);
+            formData.append('chapters', JSON.stringify(chapters));
 
-            submitBtn.disabled = true;
-            progressContainer.style.display = 'block';
-            progressFill.style.width = '10%';
-            statusMessage.textContent = 'Converting...';
-            statusMessage.className = 'status-message';
+            btn.disabled = true;
+            progress.style.display = 'block';
+            fill.style.width = '15%';
+            status.textContent = 'Processing Audio...';
 
             try {
-                const response = await fetch('/api/mp3-to-m4b', {
+                const res = await fetch('/api/mp3-to-m4b', {
                     method: 'POST',
                     body: formData
                 });
 
-                progressFill.style.width = '90%';
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Failed to convert MP3');
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || 'Failed to convert audio');
                 }
 
-                // Download the file
-                const blob = await response.blob();
-                const downloadUrl = window.URL.createObjectURL(blob);
+                fill.style.width = '100%';
+                status.textContent = 'Conversion Complete!';
+
+                const blob = await res.blob();
+                const dUrl = URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = downloadUrl;
-                a.download = response.headers.get('Content-Disposition')
-                    ?.split('filename=')[1]
-                    ?.replace(/"/g, '') || 'audiobook.m4b';
-                document.body.appendChild(a);
+                a.href = dUrl;
+                a.download = selectedFile.name.replace('.mp3', '.m4b').replace('.MP3', '.m4b');
                 a.click();
-                a.remove();
-                window.URL.revokeObjectURL(downloadUrl);
-
-                progressFill.style.width = '100%';
-                statusMessage.textContent = 'Conversion complete!';
-                statusMessage.className = 'status-message success';
-
-            } catch (error) {
-                progressFill.style.width = '100%';
-                statusMessage.textContent = 'Error: ' + error.message;
-                statusMessage.className = 'status-message error';
+            } catch (err) {
+                status.textContent = 'Error: ' + err.message;
             } finally {
-                submitBtn.disabled = false;
-                setTimeout(() => {
-                    progressContainer.style.display = 'none';
-                    progressFill.style.width = '0%';
-                }, 3000);
+                btn.disabled = false;
+                setTimeout(() => progress.style.display = 'none', 5000);
             }
-        });
+        };
+
+        // Initialize one chapter
+        createChapterEntry('Introduction', 0);
+        updateCommand();
     </script>
 </body>
+
 </html>
