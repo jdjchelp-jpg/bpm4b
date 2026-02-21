@@ -3,12 +3,12 @@ from setuptools import setup, find_packages
 setup(
     name="bpm4b",
     version="1.0.0",
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="Jdjchelp",
+    author_email="JDJCHELP@proton.me",
     description="MP3 to M4B Audiobook Converter - Convert MP3 files to M4B format with chapter support",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/bpm4b",
+    url="https://github.com/jdjchelp-jpg/bpm4b",
     packages=find_packages(),
     include_package_data=True,
     package_data={
@@ -43,7 +43,7 @@ setup(
     python_requires=">=3.8",
     keywords="mp3 m4b audiobook converter audio flask",
     project_urls={
-        "Bug Reports": "https://github.com/yourusername/bpm4b/issues",
-        "Source": "https://github.com/yourusername/bpm4b",
+        "Bug Reports": "https://github.com/jdjchelp-jpg/bpm4b/issues",
+        "Source": "https://github.com/jdjchelp-jpg/bpm4b",
     },
 )
