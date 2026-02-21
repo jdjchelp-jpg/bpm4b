@@ -2,18 +2,18 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/index.py",
+      "src": "bpm4b/api/index.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "api/index.py"
+      "dest": "bpm4b/api/index.py"
     }
   ],
   "functions": {
-    "api/index.py": {
+    "bpm4b/api/index.py": {
       "maxDuration": 30,
       "memory": 1024
     }
