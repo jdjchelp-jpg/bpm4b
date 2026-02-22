@@ -11,6 +11,43 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+def parse_time_to_seconds(time_input):
+    """
+    Parse time input to seconds.
+    
+    Supports:
+    - Integer/float seconds (e.g., 390, 390.5)
+    - MM:SS format (e.g., "6:30" -> 390)
+    - MM:SS.sss format (e.g., "6:30.5" -> 390.5)
+    
+    Returns:
+        float: Time in seconds
+    
+    Raises:
+        ValueError: If the format is invalid
+    """
+    if isinstance(time_input, (int, float)):
+        return float(time_input)
+    
+    if isinstance(time_input, str):
+        # Check if it's a simple number string
+        try:
+            return float(time_input)
+        except ValueError:
+            pass
+        
+        # Try MM:SS or M:SS or MM:SS.sss format
+        parts = time_input.strip().split(':')
+        if len(parts) == 2:
+            try:
+                minutes = float(parts[0])
+                seconds = float(parts[1])
+                return minutes * 60 + seconds
+            except ValueError:
+                pass
+    
+    raise ValueError(f"Invalid time format: {time_input}. Use seconds (e.g., 390) or MM:SS (e.g., '6:30')")
+
 def convert_mp3_to_m4b(mp3_path, output_path, chapters=None):
     """Convert MP3 to M4B with optional chapters using ffmpeg"""
     try:

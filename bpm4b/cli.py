@@ -12,7 +12,7 @@ import sys
 import argparse
 import os
 from .app import app
-from .core import convert_mp3_to_m4b
+from .core import convert_mp3_to_m4b, parse_time_to_seconds
 
 def web_command(args):
     """Start the web interface"""
@@ -101,7 +101,7 @@ Examples:
     convert_parser.add_argument('output', help='Output M4B file path')
     convert_parser.add_argument('--chapter', nargs=2, metavar=('TITLE', 'START_TIME'),
                                action='append',
-                               help='Add chapter marker (title and start time in seconds)')
+                               help='Add chapter marker (title and start time in seconds or MM:SS format, e.g., 390 or "6:30")')
     
     args = parser.parse_args()
     
@@ -116,9 +116,14 @@ Examples:
         if args.chapter:
             chapters = []
             for title, start_time in args.chapter:
+                try:
+                    parsed_time = parse_time_to_seconds(start_time)
+                except ValueError as e:
+                    print(f"Error: Invalid time format for chapter '{title}': {e}", file=sys.stderr)
+                    sys.exit(1)
                 chapters.append({
                     'title': title,
-                    'start_time': float(start_time)
+                    'start_time': parsed_time
                 })
             args.chapters = chapters
         else:

@@ -526,7 +526,7 @@
             div.className = 'chapter-entry';
             div.innerHTML = `
                 <input type="text" class="chap-title" placeholder="Title" value="${title}">
-                <input type="number" class="chap-start" placeholder="Sec" value="${start}">
+                <input type="text" class="chap-start" placeholder="e.g., 390 or 6:30" value="${start}">
                 <button type="button" class="remove-chapter-btn">×</button>
             `;
 
@@ -611,11 +611,35 @@
             cmdOutput.textContent = cmd;
         }
 
+        function parseTimeToSeconds(timeInput) {
+            // If it's already a number or numeric string
+            const num = parseFloat(timeInput);
+            if (!isNaN(num)) {
+                return num;
+            }
+
+            // Try MM:SS or M:SS or MM:SS.sss format
+            const parts = String(timeInput).trim().split(':');
+            if (parts.length === 2) {
+                const minutes = parseFloat(parts[0]);
+                const seconds = parseFloat(parts[1]);
+                if (!isNaN(minutes) && !isNaN(seconds)) {
+                    return minutes * 60 + seconds;
+                }
+            }
+
+            // Default to 0 if invalid
+            console.warn(`Invalid time format: ${timeInput}. Using 0.`);
+            return 0;
+        }
+
         function getChapters() {
-            return Array.from(document.querySelectorAll('.chapter-entry')).map(entry => ({
-                title: entry.querySelector('.chap-title').value,
-                start_time: parseFloat(entry.querySelector('.chap-start').value || 0)
-            })).sort((a, b) => a.start_time - b.start_time);
+            return Array.from(document.querySelectorAll('.chapter-entry'))
+                .map(entry => ({
+                    title: entry.querySelector('.chap-title').value,
+                    start_time: parseTimeToSeconds(entry.querySelector('.chap-start').value || 0)
+                }))
+                .sort((a, b) => a.start_time - b.start_time);
         }
 
         function copyCommand() {

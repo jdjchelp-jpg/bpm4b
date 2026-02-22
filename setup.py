@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="bpm4b",
-    version="1.0.0",
+    version="2.0.0",
     author="Jdjchelp",
     author_email="JDJCHELP@proton.me",
     description="MP3 to M4B Audiobook Converter - Convert MP3 files to M4B format with chapter support",

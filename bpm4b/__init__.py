@@ -6,6 +6,6 @@ A Flask-based web application that provides:
 2. MP3 to M4B: Convert MP3 files to M4B audiobook format with chapter support
 """
 
-__version__ = "1.0.0"
-__author__ = "Your Name"
-__email__ = "your.email@example.com"
+__version__ = "2.0.0"
+__author__ = "JDJCHELP"
+__email__ = "JDJCHELP@proton.me"

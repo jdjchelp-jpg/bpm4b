@@ -117,9 +117,23 @@ bpm4b convert book.mp3 book.m4b \\
   --chapter "Prologue" 0 \\
   --chapter "Chapter 1" 300 \\
   --chapter "Chapter 2" 1800
+
+# Multiple chapters with MM:SS format
+bpm4b convert book.mp3 book.m4b \\
+ --chapter "Prologue" "0:00" \\
+ --chapter "Chapter 1" "5:00" \\
+ --chapter "Chapter 2" "30:00"
+
+# Mixed formats (seconds and MM:SS)
+bpm4b convert book.mp3 book.m4b \\
+ --chapter "Intro" 0 \\
+ --chapter "Chapter 1" "6:30" \\
+ --chapter "Chapter 2" 3600
 ```
 
-Chapter start times are in seconds from the beginning of the audio.
+Chapter start times accept:
+- Seconds as integer (e.g., `390`)
+- Minutes:seconds format (e.g., `"6:30"` or `"6:30.5"` for fractional seconds)
 
 ### Using Python Module
 
@@ -397,11 +411,12 @@ Converts an MP3 file to M4B with optional chapters.
 
 **Form Data:**
 - `mp3_file`: The MP3 file to convert
-- `chapters` (optional): JSON array of chapter objects:
+- `chapters` (optional): JSON array of chapter objects. `start_time` accepts seconds (number) or MM:SS format (string):
 ```json
 [
   {"title": "Chapter 1", "start_time": 0},
-  {"title": "Chapter 2", "start_time": 3600}
+  {"title": "Chapter 2", "start_time": "6:30"},
+  {"title": "Chapter 3", "start_time": 3600}
 ]
 ```
 

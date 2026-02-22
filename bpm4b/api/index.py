@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Import shared core functions
-from bpm4b.core import convert_mp3_to_m4b
+from bpm4b.core import convert_mp3_to_m4b, parse_time_to_seconds
 
 app = Flask(__name__)
 
@@ -50,7 +50,12 @@ def mp3_to_m4b():
         if chapters_data:
             try:
                 chapters = json.loads(chapters_data)
-            except:
+                # Parse start_time for each chapter to ensure it's in seconds
+                for chapter in chapters:
+                    if 'start_time' in chapter:
+                        chapter['start_time'] = parse_time_to_seconds(chapter['start_time'])
+            except Exception as e:
+                logger.error(f"Error parsing chapters: {e}")
                 chapters = None
 
         # Save uploaded file
