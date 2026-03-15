@@ -8,6 +8,7 @@ import argparse
 import os
 import json
 import logging
+from . import __version__
 from .app import app
 from .core import convert_mp3_to_m4b, convert_m4b_to_mp3, parse_time_to_seconds
 
@@ -15,7 +16,7 @@ def web_command(args):
     """Start the web interface"""
     print(f"""
 ╔═══════════════════════════════════════════════════════════════╗
-║              BPM4B Professional Suite v9.0.0                  ║
+║              BPM4B Professional Suite v{__version__}                  ║
 ║                                                               ║
 ║  Web interface starting...                                    ║
 ║  URL: http://{args.host if args.host != '0.0.0.0' else 'localhost'}:{args.port}                    ║
