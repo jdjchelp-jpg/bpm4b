@@ -1,10 +1,10 @@
 import os
 import uuid
-import subprocess
+import json
 import logging
-from datetime import datetime
+import threading
 from flask import Flask, request, send_file, jsonify, render_template
-from .core import convert_mp3_to_m4b
+from .core import convert_mp3_to_m4b, convert_m4b_to_mp3, parse_time_to_seconds
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -15,71 +15,93 @@ app = Flask(__name__,
             static_folder=None)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['OUTPUT_FOLDER'] = 'outputs'
-app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max
+app.config['MAX_CONTENT_LENGTH'] = 2000 * 1024 * 1024  # 2GB max
 
 # Ensure directories exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
 
-# Check for FFmpeg at startup
-try:
-    subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
-    logger.info("FFmpeg is available")
-except (subprocess.CalledProcessError, FileNotFoundError):
-    logger.warning("FFmpeg is not installed or not in PATH. MP3 to M4B conversion will not work.")
-
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/api/mp3-to-m4b', methods=['POST'])
-def mp3_to_m4b():
-    """Convert MP3 to M4B with chapters"""
+@app.route('/api/convert', methods=['POST'])
+def convert():
+    """Unified conversion endpoint"""
     try:
-        # Check if file was uploaded
-        if 'mp3_file' not in request.files:
-            return jsonify({'error': 'No MP3 file provided'}), 400
+        file = request.files.get('source_file') or request.files.get('mp3_file')
+        if not file:
+            return jsonify({'error': 'No file provided'}), 400
 
-        mp3_file = request.files['mp3_file']
-        if mp3_file.filename == '':
-            return jsonify({'error': 'No file selected'}), 400
+        # Determine type
+        ext = os.path.splitext(file.filename)[1].lower()
+        is_mp3 = ext == '.mp3'
+        
+        # Save temp
+        source_filename = f"{uuid.uuid4()}{ext}"
+        source_path = os.path.join(app.config['UPLOAD_FOLDER'], source_filename)
+        file.save(source_path)
 
-        # Get chapter data if provided
+        # Chapters
         chapters_data = request.form.get('chapters')
-        chapters = None
-        if chapters_data:
-            try:
-                chapters = json.loads(chapters_data)
-            except:
-                chapters = None
+        chapters = json.loads(chapters_data) if chapters_data else None
 
-        # Save uploaded file
-        mp3_filename = f"{uuid.uuid4()}.mp3"
-        mp3_path = os.path.join(app.config['UPLOAD_FOLDER'], mp3_filename)
-        mp3_file.save(mp3_path)
+        # Output
+        output_ext = '.m4b' if is_mp3 else '.mp3'
+        output_filename = f"{os.path.splitext(file.filename)[0]}{output_ext}"
+        output_path = os.path.join(app.config['OUTPUT_FOLDER'], f"{uuid.uuid4()}{output_ext}")
 
-        # Create output filename
-        output_filename = f'{os.path.splitext(mp3_file.filename)[0]}.m4b'
-        output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
+        if is_mp3:
+            convert_mp3_to_m4b(source_path, output_path, chapters)
+        else:
+            convert_m4b_to_mp3(source_path, output_path)
 
-        # Convert to M4B
-        logger.info(f"Converting {mp3_path} to {output_path}")
-        convert_mp3_to_m4b(mp3_path, output_path, chapters)
+        # Cleanup
+        os.remove(source_path)
 
-        # Cleanup uploaded file
-        os.remove(mp3_path)
-
-        # Send the file
-        return send_file(
-            output_path,
-            as_attachment=True,
-            download_name=output_filename,
-            mimetype='audio/x-m4b'
-        )
+        return send_file(output_path, as_attachment=True, download_name=output_filename)
 
     except Exception as e:
-        logger.error(f"Error in mp3_to_m4b: {e}")
+        logger.error(f"Error in convert: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/generate-audiobook', methods=['POST'])
+def generate_audiobook():
+    """Document to Audiobook using Kokoro TTS"""
+    try:
+        file = request.files.get('doc_file')
+        if not file:
+            return jsonify({'error': 'No document provided'}), 400
+
+        voice = request.form.get('voice', 'af_heart')
+        
+        # Save temp
+        ext = os.path.splitext(file.filename)[1].lower()
+        source_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}{ext}")
+        file.save(source_path)
+
+        # Parse Text
+        doc_data = parse_document(source_path)
+        text = doc_data['text']
+        
+        # Generate Audio (WAV first)
+        wav_path = os.path.join(app.config['OUTPUT_FOLDER'], f"{uuid.uuid4()}.wav")
+        generate_tts(text, wav_path, voice=voice)
+
+        # Convert WAV to M4B
+        output_filename = f"{os.path.splitext(file.filename)[0]}.m4b"
+        output_path = os.path.join(app.config['OUTPUT_FOLDER'], f"{uuid.uuid4()}.m4b")
+        convert_mp3_to_m4b(wav_path, output_path)
+
+        # Cleanup
+        os.remove(source_path)
+        os.remove(wav_path)
+
+        return send_file(output_path, as_attachment=True, download_name=output_filename)
+
+    except Exception as e:
+        logger.error(f"Error in generate_audiobook: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)

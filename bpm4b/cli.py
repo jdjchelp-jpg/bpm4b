@@ -1,134 +1,117 @@
 #!/usr/bin/env python3
 """
-Command-line interface for BPM4B (MP3 to M4B Converter).
-
-Usage:
-    bpm4b web [options]    Start the web interface
-    bpm4b convert [args]   Convert MP3 to M4B from command line
-    bpm4b --help           Show help
+BPM4B CLI - Professional Multimedia Suite v9.0.0
 """
 
 import sys
 import argparse
 import os
+import json
+import logging
 from .app import app
-from .core import convert_mp3_to_m4b, parse_time_to_seconds
+from .core import convert_mp3_to_m4b, convert_m4b_to_mp3, parse_time_to_seconds
 
 def web_command(args):
     """Start the web interface"""
     print(f"""
 ╔═══════════════════════════════════════════════════════════════╗
-║              MP3 to M4B Converter v{__import__('bpm4b').__version__}                      ║
+║              BPM4B Professional Suite v9.0.0                  ║
 ║                                                               ║
 ║  Web interface starting...                                    ║
 ║  URL: http://{args.host if args.host != '0.0.0.0' else 'localhost'}:{args.port}                    ║
-║  Debug mode: {'ON' if args.debug else 'OFF'}                                   ║
+║  AI Engine: Kokoro-82M Local                                  ║
 ╚═══════════════════════════════════════════════════════════════╝
     """)
-    
-    try:
-        app.run(host=args.host, port=args.port, debug=args.debug)
-    except KeyboardInterrupt:
-        print("\n\nServer stopped. Goodbye!")
-        sys.exit(0)
-    except Exception as e:
-        print(f"Error starting server: {e}", file=sys.stderr)
-        sys.exit(1)
+    app.run(host=args.host, port=args.port, debug=args.debug)
 
 def convert_command(args):
-    """Convert MP3 to M4B from command line"""
-    import subprocess
-    
+    """Unified conversion command"""
     if not os.path.exists(args.input):
         print(f"Error: Input file '{args.input}' not found", file=sys.stderr)
         sys.exit(1)
     
-    # Ensure output directory exists
-    output_dir = os.path.dirname(args.output)
-    if output_dir:
-        os.makedirs(output_dir, exist_ok=True)
+    ext = os.path.splitext(args.input)[1].lower()
+    is_mp3 = ext == '.mp3'
     
-    # Check FFmpeg
-    try:
-        subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        print("Error: FFmpeg is not installed or not in PATH", file=sys.stderr)
-        print("Install FFmpeg: https://ffmpeg.org/download.html", file=sys.stderr)
-        sys.exit(1)
-    
-    print(f"Converting: {args.input} -> {args.output}")
+    print(f"[*] Processing: {args.input} -> {args.output}")
     
     try:
-        convert_mp3_to_m4b(args.input, args.output, args.chapters)
-        print(f"✓ Conversion complete: {args.output}")
+        if is_mp3:
+            convert_mp3_to_m4b(args.input, args.output, args.chapters, quality=args.quality)
+        else:
+            convert_m4b_to_mp3(args.input, args.output, quality=args.quality)
+        print(f"✓ Success: {args.output}")
     except Exception as e:
-        print(f"Error during conversion: {e}", file=sys.stderr)
+        print(f"✗ Error: {e}", file=sys.stderr)
         sys.exit(1)
+
+def audiobook_command(args):
+    """Generate audiobook from document"""
+    try:
+        from .document_parser import parse_document
+        from .tts import generate_tts
+    except ImportError:
+        print("Error: Document parser or TTS engine dependencies (kokoro, mammoth, etc.) not found.")
+        print("Install them with: pip install mammoth PyPDF2 ebooklib kokoro")
+        sys.exit(1)
+
+    if not os.path.exists(args.input):
+        print(f"Error: Input file '{args.input}' not found", file=sys.stderr)
+        sys.exit(1)
+        
+    print(f"[*] Extracting text from {args.input}...")
+    doc = parse_document(args.input)
+    
+    work_wav = f"tmp_{os.getpid()}.wav"
+    try:
+        print(f"[*] Generating AI Speech ({args.voice})...")
+        generate_tts(doc['text'], work_wav, voice=args.voice, speed=args.speed)
+        
+        print(f"[*] Finalizing M4B...")
+        convert_mp3_to_m4b(work_wav, args.output)
+        print(f"✓ Audiobook ready: {args.output}")
+    finally:
+        if os.path.exists(work_wav):
+            os.remove(work_wav)
 
 def main():
-    """Main entry point for the CLI command"""
-    parser = argparse.ArgumentParser(
-        description="MP3 to M4B Audiobook Converter",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Start web interface
-  bpm4b web
-  bpm4b web --port 8080
-  bpm4b web --host 127.0.0.1 --debug
-
-  # Convert MP3 to M4B
-  bpm4b convert input.mp3 output.m4b
-  bpm4b convert input.mp3 output.m4b --chapter "Chapter 1" 0
-  bpm4b convert input.mp3 output.m4b --chapter "Intro" 0 --chapter "Chapter 1" 3600
-        """
-    )
+    parser = argparse.ArgumentParser(description="BPM4B - Professional Audio Suite")
+    subparsers = parser.add_subparsers(dest='command')
     
-    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    # Web
+    web_p = subparsers.add_parser('web', help='Start web interface')
+    web_p.add_argument('--host', default='0.0.0.0')
+    web_p.add_argument('--port', type=int, default=5000)
+    web_p.add_argument('--debug', action='store_true')
     
-    # Web command
-    web_parser = subparsers.add_parser('web', help='Start the web interface')
-    web_parser.add_argument('--host', default='0.0.0.0',
-                           help='Host to bind to (default: 0.0.0.0)')
-    web_parser.add_argument('--port', type=int, default=5000,
-                           help='Port to bind to (default: 5000)')
-    web_parser.add_argument('--debug', action='store_true',
-                           help='Enable debug mode')
+    # Convert
+    conv_p = subparsers.add_parser('convert', help='MP3 to M4B or M4B to MP3')
+    conv_p.add_argument('input')
+    conv_p.add_argument('output')
+    conv_p.add_argument('--quality', default='64k')
+    conv_p.add_argument('--chapter', nargs=2, metavar=('TITLE', 'START'), action='append')
     
-    # Convert command
-    convert_parser = subparsers.add_parser('convert', help='Convert MP3 to M4B')
-    convert_parser.add_argument('input', help='Input MP3 file path')
-    convert_parser.add_argument('output', help='Output M4B file path')
-    convert_parser.add_argument('--chapter', nargs=2, metavar=('TITLE', 'START_TIME'),
-                               action='append',
-                               help='Add chapter marker (title and start time in seconds or MM:SS format, e.g., 390 or "6:30")')
+    # Audiobook
+    audio_p = subparsers.add_parser('audiobook', help='Document to M4B Audiobook')
+    audio_p.add_argument('input')
+    audio_p.add_argument('output')
+    audio_p.add_argument('--voice', default='af_heart')
+    audio_p.add_argument('--speed', type=float, default=1.0)
     
     args = parser.parse_args()
-    
-    if not args.command:
-        parser.print_help()
-        sys.exit(1)
     
     if args.command == 'web':
         web_command(args)
     elif args.command == 'convert':
-        # Convert chapter arguments to proper format
         if args.chapter:
-            chapters = []
-            for title, start_time in args.chapter:
-                try:
-                    parsed_time = parse_time_to_seconds(start_time)
-                except ValueError as e:
-                    print(f"Error: Invalid time format for chapter '{title}': {e}", file=sys.stderr)
-                    sys.exit(1)
-                chapters.append({
-                    'title': title,
-                    'start_time': parsed_time
-                })
-            args.chapters = chapters
+            args.chapters = [{'title': c[0], 'start_time': c[1]} for c in args.chapter]
         else:
             args.chapters = None
         convert_command(args)
+    elif args.command == 'audiobook':
+        audiobook_command(args)
+    else:
+        parser.print_help()
 
 if __name__ == '__main__':
     main()
