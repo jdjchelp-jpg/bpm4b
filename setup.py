@@ -2,32 +2,44 @@ from setuptools import setup, find_packages
 
 setup(
     name="bpm4b",
-    version="9.0.2",
-    author="Jdjchelp",
+    version="12.0.0",
+    author="JDJCHELP",
     author_email="JDJCHELP@proton.me",
-    description="MP3 to M4B Audiobook Converter - Convert MP3 files to M4B format with chapter support",
+    description="Professional Multimedia Suite - MP3/M4B Converter, AI Audiobooks, EPUB Tools, Document Processing",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/jdjchelp-jpg/bpm4b",
     packages=find_packages(),
     include_package_data=True,
     package_data={
-        "bpm4b": [
-            "templates/*.html",
-        ],
+        "bpm4b": ["templates/*.html"],
     },
     install_requires=[
-        line.strip()
-        for line in open("requirements.txt", encoding="utf-8")
-        if line.strip() and not line.startswith("#")
+        "Flask>=2.3.3",
+        "Werkzeug>=2.3.7",
+        "pypdf>=3.0.0",
+        "mammoth>=1.6.0",
+        "ebooklib>=0.18",
+        "beautifulsoup4>=4.12.2",
+        "lxml>=4.9.3",
+        "soundfile>=0.12.0",
+        "requests>=2.31.0",
+        "markdown>=3.4.0",
+        "PyMuPDF>=1.23.0",
     ],
+    extras_require={
+        "tts": ["kokoro>=0.9.4"],
+        "tts-onnx": ["kokoro-onnx"],
+        "ocr": ["pytesseract>=0.3.10", "Pillow>=10.0.0"],
+        "all": ["kokoro>=0.9.4", "pytesseract>=0.3.10", "Pillow>=10.0.0"],
+    },
     entry_points={
         "console_scripts": [
             "bpm4b=bpm4b.cli:main",
         ],
     },
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: End Users/Desktop",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
@@ -38,12 +50,15 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Topic :: Multimedia :: Sound/Audio :: Conversion",
+        "Topic :: Multimedia :: Sound/Audio :: Speech",
+        "Topic :: Text Processing :: Markup :: HTML",
         "Topic :: Utilities",
     ],
     python_requires=">=3.8",
-    keywords="mp3 m4b audiobook converter audio flask",
+    keywords="mp3 m4b audiobook converter epub tts kokoro metadata editor audio-format-converter batch-merge voice-cloning",
     project_urls={
         "Bug Reports": "https://github.com/jdjchelp-jpg/bpm4b/issues",
         "Source": "https://github.com/jdjchelp-jpg/bpm4b",
+        "Documentation": "https://github.com/jdjchelp-jpg/bpm4b/wiki",
     },
 )

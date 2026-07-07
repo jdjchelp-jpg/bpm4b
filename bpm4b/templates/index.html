@@ -1,471 +1,801 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BPM4B Pro | AI Audiobook Suite</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <title>BPM4B v12 | Ultimate Production Suite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.4);
-            --secondary: #ec4899;
-            --bg-dark: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent: #818cf8;
+            --primary: #6366f1; --primary-glow: rgba(99,102,241,0.4);
+            --accent: #8b5cf6; --success: #10b981; --error: #ef4444; --warning: #f59e0b;
+            --bg-app: #020617; --bg-surface: #0f172a;
+            --glass-bg: rgba(30,41,59,0.7); --glass-border: rgba(255,255,255,0.08);
+            --text-primary: #f8fafc; --text-secondary: #94a3b8; --text-muted: #64748b;
+            --slate-100: #1e293b; --slate-200: #334155; --slate-300: #475569;
+            --slate-400: #64748b; --slate-600: #cbd5e1; --slate-900: #f8fafc;
+            --radius-sm: 8px; --radius-md: 12px; --radius-lg: 20px;
+            --font-main: 'Outfit', sans-serif; --font-body: 'Inter', sans-serif;
+        }
+        [data-theme="light"] {
+            --bg-app: #f8fafc; --bg-surface: #ffffff;
+            --glass-bg: rgba(255,255,255,0.85); --glass-border: rgba(0,0,0,0.08);
+            --text-primary: #0f172a; --text-secondary: #475569; --text-muted: #94a3b8;
+            --slate-100: #e2e8f0; --slate-200: #cbd5e1; --slate-900: #0f172a;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+        body { font-family: var(--font-body); background: var(--bg-app); color: var(--slate-900); min-height: 100vh; display: flex; transition: all 0.3s ease; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-app); }
+        ::-webkit-scrollbar-thumb { background: var(--slate-100); border-radius: 10px; }
 
-        body {
-            font-family: 'Outfit', sans-serif;
-            background-color: var(--bg-dark);
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.1) 0px, transparent 50%);
-            color: var(--text-main);
-            min-height: 100vh;
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
+        .app-shell { display: flex; width: 100%; height: 100vh; overflow: hidden; }
+        .sidebar { width: 260px; height: 100vh; background: var(--bg-surface); border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; padding: 1.5rem; overflow-y: auto; transition: all 0.3s; z-index: 50; }
+        .sidebar.collapsed { width: 72px; padding: 1.5rem 0.75rem; }
+        .sidebar.collapsed .nav-label, .sidebar.collapsed .nav-text, .sidebar.collapsed .brand-text, .sidebar.collapsed .version-tag { display: none; }
+        .brand { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem; }
+        .brand-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 4px 12px var(--primary-glow); flex-shrink: 0; }
+        .brand-text { font-family: var(--font-main); font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; }
+        .version-tag { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.1rem; }
+        .nav-group { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 1.5rem; }
+        .nav-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); padding: 0.5rem 0.5rem 0.25rem; }
+        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.75rem; border-radius: var(--radius-md); color: var(--text-secondary); font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+        .nav-item:hover { color: var(--text-primary); background: var(--slate-100); }
+        .nav-item.active { color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); border-color: color-mix(in srgb, var(--primary) 20%, transparent); }
+        .nav-icon { width: 18px; height: 18px; opacity: 0.7; flex-shrink: 0; }
+        .nav-item.active .nav-icon { opacity: 1; }
+        .sidebar-footer { margin-top: auto; border-top: 1px solid var(--glass-border); padding-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+        .footer-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 4rem 2rem;
-        }
+        .main-content { flex: 1; overflow-y: auto; padding: 2rem; background: var(--bg-app);
+            background-image: radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--primary) 6%, transparent) 0%, transparent 50%),
+                              radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--accent) 6%, transparent) 0%, transparent 50%); }
+        .content-header { margin-bottom: 2rem; }
+        .content-title { font-family: var(--font-main); font-size: 1.8rem; font-weight: 700; }
+        .content-subtitle { color: var(--text-secondary); font-size: 0.95rem; }
 
-        header {
-            text-align: center;
-            margin-bottom: 5rem;
-            position: relative;
-        }
+        .tool-grid { display: none; max-width: 1000px; margin: 0 auto; }
+        .tool-grid.active { display: block; animation: fadeIn 0.4s ease-out; }
 
-        .hero-title {
-            font-size: 4rem;
-            font-weight: 800;
-            letter-spacing: -0.04em;
-            background: linear-gradient(to right, #818cf8, #f472b6);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 1rem;
-        }
+        .card { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 2rem; margin-bottom: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .card-title { font-family: var(--font-main); font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 0.75rem; }
+        .card-icon { width: 32px; height: 32px; background: color-mix(in srgb, var(--primary) 10%, transparent); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
-        .hero-subtitle {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            max-width: 600px;
-            margin: 0 auto;
-        }
+        .form-group { margin-bottom: 1.25rem; }
+        label { display: block; font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+        .form-input, .form-select, textarea { width: 100%; background: var(--slate-100); border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 0.75rem 1rem; color: var(--slate-900); font-family: var(--font-body); font-size: 0.9rem; transition: all 0.2s; }
+        .form-input:focus, .form-select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent); }
+        textarea { min-height: 100px; resize: vertical; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
 
-        .nav-tabs {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-bottom: 3rem;
-            background: var(--card-bg);
-            padding: 0.5rem;
-            border-radius: 100px;
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            width: fit-content;
-            margin-left: auto;
-            margin-right: auto;
-        }
+        .drop-zone { border: 2px dashed var(--slate-200); border-radius: var(--radius-lg); padding: 2.5rem 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s; background: color-mix(in srgb, var(--slate-100) 40%, transparent); display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+        .drop-zone:hover, .drop-zone.drag-over { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 5%, transparent); transform: scale(1.005); }
+        .drop-zone-icon { width: 40px; height: 40px; color: var(--primary); }
+        .drop-zone p { font-weight: 600; font-size: 0.95rem; color: var(--text-secondary); }
+        .drop-zone small { font-size: 0.8rem; color: var(--text-muted); }
+        .file-info { margin-top: 0.75rem; padding: 0.75rem 1rem; background: color-mix(in srgb, var(--success) 8%, transparent); border: 1px solid color-mix(in srgb, var(--success) 15%, transparent); border-radius: var(--radius-md); font-size: 0.85rem; color: var(--success); font-weight: 600; display: none; }
+        .file-info.visible { display: flex; align-items: center; justify-content: space-between; }
 
-        .tab-btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            background: transparent;
-            color: var(--text-muted);
-            font-weight: 600;
-            cursor: pointer;
-            border-radius: 100px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.8rem 1.25rem; border-radius: var(--radius-md); font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; border: none; font-family: var(--font-main); }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; box-shadow: 0 4px 15px color-mix(in srgb, var(--primary) 25%, transparent); width: 100%; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px color-mix(in srgb, var(--primary) 40%, transparent); }
+        .btn-secondary { background: var(--slate-100); color: var(--slate-900); border: 1px solid var(--slate-200); }
+        .btn-sm { padding: 0.5rem 0.75rem; font-size: 0.8rem; }
 
-        .tab-btn.active {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 0 20px var(--primary-glow);
-        }
+        .progress-card { margin-top: 1.5rem; display: none; }
+        .progress-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.85rem; }
+        .progress-track { height: 8px; background: var(--slate-100); border-radius: 4px; overflow: hidden; border: 1px solid var(--slate-200); }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); width: 0%; transition: width 0.4s ease-out; position: relative; }
+        .progress-fill::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); animation: shimmer 1.5s infinite; }
+        .progress-status { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem; }
 
-        .tool-panel {
-            display: none;
-            animation: fadeIn 0.5s ease-out;
-        }
+        .chapter-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+        .chapter-row { display: flex; gap: 0.75rem; align-items: center; }
+        .chapter-row input { background: var(--slate-100); border: 1px solid var(--slate-200); border-radius: var(--radius-sm); padding: 0.5rem 0.75rem; color: var(--slate-900); font-family: inherit; font-size: 0.85rem; }
+        .chapter-row .ch-title { flex: 1; }
+        .chapter-row .ch-time { width: 100px; }
+        .chapter-row .ch-remove { color: var(--error); cursor: pointer; padding: 0.25rem; opacity: 0.5; transition: opacity 0.2s; background: none; border: none; font-size: 1.1rem; }
+        .chapter-row .ch-remove:hover { opacity: 1; }
 
-        .tool-panel.active {
-            display: block;
-        }
+        .result-area { margin-top: 1rem; padding: 1rem; background: color-mix(in srgb, var(--success) 8%, transparent); border: 1px solid color-mix(in srgb, var(--success) 15%, transparent); border-radius: var(--radius-md); display: none; text-align: center; }
+        .result-area.visible { display: block; }
+        .result-area a { color: var(--success); font-weight: 700; text-decoration: none; }
 
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            border: 1px solid var(--glass-border);
-            padding: 3rem;
-            box-shadow: 0 40px 100px -20px rgba(0,0,0,0.5);
-            max-width: 800px;
-            margin: 0 auto;
-        }
+        .metadata-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .metadata-full { grid-column: span 2; }
+        @media (max-width: 768px) { .metadata-grid { grid-template-columns: 1fr; } .metadata-full { grid-column: span 1; } }
 
-        .form-group {
-            margin-bottom: 2rem;
-        }
+        .log-vessel { background: rgba(0,0,0,0.25); border-radius: var(--radius-md); padding: 0.75rem; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); height: 120px; overflow-y: auto; border: 1px solid var(--glass-border); margin-top: 1rem; }
+        .log-line { margin-bottom: 0.15rem; padding-left: 0.5rem; border-left: 2px solid transparent; }
+        .log-line.info { border-color: var(--primary); }
+        .log-line.success { border-color: var(--success); color: var(--text-primary); }
+        .log-line.error { border-color: var(--error); color: var(--error); }
 
-        label {
-            display: block;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--accent);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 0.75rem;
-        }
+        .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; }
+        .theme-swatch { padding: 0.75rem; border-radius: var(--radius-md); text-align: center; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; font-size: 0.8rem; font-weight: 600; }
+        .theme-swatch:hover { transform: scale(1.05); }
+        .theme-swatch.active { border-color: var(--primary); }
 
-        .drop-zone {
-            border: 2px dashed var(--glass-border);
-            border-radius: 20px;
-            padding: 3rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: rgba(255,255,255,0.02);
-            position: relative;
-        }
+        .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; }
+        .toast { background: var(--bg-surface); border: 1px solid var(--glass-border); padding: 0.75rem 1.25rem; border-radius: var(--radius-md); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); font-weight: 500; font-size: 0.85rem; display: flex; align-items: center; gap: 0.75rem; animation: slideIn 0.3s ease-out; }
 
-        .drop-zone:hover, .drop-zone.active {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.05);
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(100px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
 
-        .drop-zone input {
-            display: none;
-        }
-
-        .drop-zone i {
-            display: block;
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: var(--primary);
-        }
-
-        .btn-build {
-            width: 100%;
-            padding: 1.25rem;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border: none;
-            border-radius: 16px;
-            color: white;
-            font-size: 1.1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 1rem;
-            box-shadow: 0 10px 30px -10px var(--primary-glow);
-        }
-
-        .btn-build:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.1);
-        }
-
-        .progress-container {
-            margin-top: 2rem;
-            display: none;
-        }
-
-        .progress-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.75rem;
-            font-size: 0.9rem;
-        }
-
-        .progress-track {
-            height: 12px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 100px;
-            overflow: hidden;
-            border: 1px solid var(--glass-border);
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            width: 0%;
-            transition: width 0.4s cubic-bezier(0.1, 0.7, 1.0, 0.1);
-        }
-
-        .chapter-list {
-            background: rgba(0,0,0,0.2);
-            border-radius: 16px;
-            margin-top: 1.5rem;
-            border: 1px solid var(--glass-border);
-        }
-
-        .chapter-item {
-            display: flex;
-            gap: 1rem;
-            padding: 1rem;
-            border-bottom: 1px solid var(--glass-border);
-        }
-
-        .chapter-item:last-child {
-            border: none;
-        }
-
-        .chapter-item input {
-            background: transparent;
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            padding: 0.5rem 0.75rem;
-            color: white;
-            font-family: inherit;
-        }
-
-        .chapter-title { flex: 1; }
-        .chapter-time { width: 120px; }
-
-        .select-modern {
-            width: 100%;
-            background: var(--bg-dark);
-            border: 1px solid var(--glass-border);
-            color: white;
-            padding: 1rem;
-            border-radius: 12px;
-            appearance: none;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
+        .hidden { display: none !important; }
+        .mb-2 { margin-bottom: 2rem; }
+        .flex { display: flex; }
+        .gap-1 { gap: 1rem; }
+        .text-center { text-align: center; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1 class="hero-title">BPM4B PRO</h1>
-            <p class="hero-subtitle">v9.0.0 • AI-Powered Audiobook Generation & High-Fidelity Conversion</p>
-        </header>
-
-        <div class="nav-tabs">
-            <button class="tab-btn active" onclick="switchTab('mp3-to-m4b')">MP3 → M4B</button>
-            <button class="tab-btn" onclick="switchTab('m4b-to-mp3')">M4B → MP3</button>
-            <button class="tab-btn" onclick="switchTab('audiobook-gen')">Audiobook Gen</button>
-        </div>
-
-        <!-- MP3 to M4B Modern -->
-        <div id="mp3-to-m4b" class="tool-panel active">
-            <div class="card">
-                <form id="form-mp3">
-                    <div class="form-group">
-                        <label>Source MP3</label>
-                        <div class="drop-zone" id="drop-mp3">
-                            <i>⚡</i>
-                            <p id="label-mp3">Drop your MP3 here or click to browse</p>
-                            <input type="file" id="input-mp3" accept=".mp3">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Chapters</label>
-                        <div class="chapter-list" id="list-chapters">
-                            <!-- JS populated -->
-                        </div>
-                        <button type="button" class="tab-btn" style="margin-top:1rem; border:1px solid var(--glass-border)" onclick="addChapter()">+ Add Chapter</button>
-                    </div>
-
-                    <button type="submit" class="btn-build">Build M4B Audiobook</button>
-                </form>
-
-                <div class="progress-container" id="progress-mp3">
-                    <div class="progress-header">
-                        <span id="status-mp3">Preparing...</span>
-                        <span id="percent-mp3">0%</span>
-                    </div>
-                    <div class="progress-track"><div class="progress-fill" id="fill-mp3"></div></div>
+    <div class="app-shell">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="brand">
+                <div class="brand-icon">◈</div>
+                <div>
+                    <div class="brand-text">BPM4B</div>
+                    <div class="version-tag">v12.0.0 Pro</div>
                 </div>
             </div>
-        </div>
 
-        <!-- M4B to MP3 -->
-        <div id="m4b-to-mp3" class="tool-panel">
-            <div class="card">
-                <form id="form-m4b">
-                    <div class="form-group">
-                        <label>Source M4B/M4A</label>
-                        <div class="drop-zone" id="drop-m4b">
-                            <i>🎧</i>
-                            <p id="label-m4b">Select audiobook file</p>
-                            <input type="file" id="input-m4b" accept=".m4b,.m4a">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-build">Convert to Hi-Fi MP3</button>
-                </form>
-                <div class="progress-container" id="progress-m4b">
-                    <div class="progress-header">
-                        <span id="status-m4b">Converting...</span>
-                        <span id="percent-m4b">0%</span>
-                    </div>
-                    <div class="progress-track"><div class="progress-fill" id="fill-m4b"></div></div>
+            <div class="nav-group">
+                <div class="nav-label">Conversion</div>
+                <div class="nav-item active" data-tool="mp3-to-m4b">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                    <span class="nav-text">MP3 → M4B</span>
+                </div>
+                <div class="nav-item" data-tool="m4b-to-mp3">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                    <span class="nav-text">M4B → MP3</span>
+                </div>
+                <div class="nav-item" data-tool="converter">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><polyline points="7 11 12 6 17 11"/><line x1="12" y1="6" x2="12" y2="18"/></svg>
+                    <span class="nav-text">Audio Format</span>
                 </div>
             </div>
-        </div>
 
-        <!-- Audiobook Generator -->
-        <div id="audiobook-gen" class="tool-panel">
-            <div class="card">
-                <form id="form-gen">
-                    <div class="form-group">
-                        <label>Document (PDF/DOCX/TXT)</label>
-                        <div class="drop-zone" id="drop-gen">
-                            <i>📚</i>
-                            <p id="label-gen">Choose your document</p>
-                            <input type="file" id="input-gen" accept=".pdf,.docx,.txt,.epub">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>AI Voice (Kokoro)</label>
-                        <select class="select-modern" id="voice-select">
-                            <option value="af_heart">Heart (F) - Warm & Clear</option>
-                            <option value="af_bella">Bella (F) - Professional</option>
-                            <option value="am_adam">Adam (M) - Energetic</option>
-                            <option value="am_echo">Echo (M) - Calm</option>
-                        </select>
-                    </div>
-
-                    <button type="submit" class="btn-build">Generate AI Audiobook</button>
-                </form>
-                <div class="progress-container" id="progress-gen">
-                    <div class="progress-header">
-                        <span id="status-gen">Initializing AI...</span>
-                        <span id="percent-gen">0%</span>
-                    </div>
-                    <div class="progress-track"><div class="progress-fill" id="fill-gen"></div></div>
+            <div class="nav-group">
+                <div class="nav-label">Audiobooks</div>
+                <div class="nav-item" data-tool="audiobook">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c-3 0-6 2-6 6v4c0 3 3 5 6 5s6-2 6-5V8c0-4-3-6-6-6z"/><path d="M8 22h8"/><path d="M10 18v4"/><path d="M14 18v4"/></svg>
+                    <span class="nav-text">Audiobook Gen</span>
+                </div>
+                <div class="nav-item" data-tool="epub-audio">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    <span class="nav-text">EPUB → Audio</span>
+                </div>
+                <div class="nav-item" data-tool="merge">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/><path d="m15 5 3 3-3 3M9 13l-3 3 3 3"/></svg>
+                    <span class="nav-text">Batch Merge</span>
                 </div>
             </div>
-        </div>
+
+            <div class="nav-group">
+                <div class="nav-label">Tools</div>
+                <div class="nav-item" data-tool="epub">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/><path d="M14 2v6h6"/></svg>
+                    <span class="nav-text">Doc → EPUB</span>
+                </div>
+                <div class="nav-item" data-tool="metadata">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                    <span class="nav-text">Metadata Editor</span>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="footer-row">
+                    <span>Theme</span>
+                    <select id="themeSelect" class="form-input" style="width:auto;padding:0.3rem 0.5rem;font-size:0.75rem" onchange="changeTheme(this.value)">
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                    </select>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- MP3 → M4B -->
+            <div class="tool-grid active" id="tool-mp3-to-m4b">
+                <div class="content-header">
+                    <h1 class="content-title">MP3 to M4B</h1>
+                    <p class="content-subtitle">Convert MP3 files to audiobook format with embedded chapters</p>
+                </div>
+                <div class="card">
+                    <form id="form-mp3">
+                        <div class="form-group">
+                            <label>Source MP3</label>
+                            <div class="drop-zone" id="drop-mp3">
+                                <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                <p>Drop MP3 or click to browse</p>
+                                <small>up to 2GB</small>
+                                <input type="file" id="input-mp3" accept=".mp3" hidden>
+                            </div>
+                            <div class="file-info" id="info-mp3"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Chapters</label>
+                            <div id="chapters-container"><div class="chapter-row"><input class="ch-title" placeholder="Chapter title" value="Introduction"><input class="ch-time" placeholder="0:00" value="0:00"><button type="button" class="ch-remove" onclick="this.parentElement.remove()">×</button></div></div>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="addChapterRow()">+ Add Chapter</button>
+                        </div>
+                        <div class="form-group">
+                            <label>Audio Quality</label>
+                            <select class="form-select" id="quality-mp3">
+                                <option value="64k">64 kbps (Small)</option>
+                                <option value="128k" selected>128 kbps (Standard)</option>
+                                <option value="192k">192 kbps (High)</option>
+                                <option value="256k">256 kbps (Very High)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Build M4B Audiobook</button>
+                    </form>
+                    <div class="progress-card" id="progress-mp3">
+                        <div class="progress-header"><span id="status-mp3">Processing...</span><span id="percent-mp3">0%</span></div>
+                        <div class="progress-track"><div class="progress-fill" id="fill-mp3"></div></div>
+                        <div class="progress-status" id="detail-mp3"></div>
+                    </div>
+                    <div class="result-area" id="result-mp3"><a id="dl-mp3" href="#">⬇ Download M4B</a></div>
+                </div>
+            </div>
+
+            <!-- M4B → MP3 -->
+            <div class="tool-grid" id="tool-m4b-to-mp3">
+                <div class="content-header"><h1 class="content-title">M4B to MP3</h1><p class="content-subtitle">Extract high-fidelity MP3 from audiobook files</p></div>
+                <div class="card">
+                    <form id="form-m4b">
+                        <div class="form-group">
+                            <label>Source M4B/M4A</label>
+                            <div class="drop-zone" id="drop-m4b">
+                                <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                <p>Drop M4B or click to browse</p>
+                                <input type="file" id="input-m4b" accept=".m4b,.m4a" hidden>
+                            </div>
+                            <div class="file-info" id="info-m4b"></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Convert to Hi-Fi MP3</button>
+                    </form>
+                    <div class="progress-card" id="progress-m4b"><div class="progress-header"><span id="status-m4b">Converting...</span><span id="percent-m4b">0%</span></div><div class="progress-track"><div class="progress-fill" id="fill-m4b"></div></div></div>
+                    <div class="result-area" id="result-m4b"><a id="dl-m4b" href="#">⬇ Download MP3</a></div>
+                </div>
+            </div>
+
+            <!-- Audio Format Converter -->
+            <div class="tool-grid" id="tool-converter">
+                <div class="content-header"><h1 class="content-title">Audio Format Converter</h1><p class="content-subtitle">Convert between MP3, WAV, FLAC, AAC, OGG, ALAC</p></div>
+                <div class="card">
+                    <form id="form-converter">
+                        <div class="form-group">
+                            <label>Source Audio</label>
+                            <div class="drop-zone" id="drop-converter">
+                                <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><polyline points="7 11 12 6 17 11"/><line x1="12" y1="6" x2="12" y2="18"/></svg>
+                                <p>Drop audio file</p>
+                                <input type="file" id="input-converter" accept=".mp3,.wav,.flac,.aac,.ogg,.m4a" hidden>
+                            </div>
+                            <div class="file-info" id="info-converter"></div>
+                        </div>
+                        <div class="metadata-grid">
+                            <div class="form-group">
+                                <label>Target Format</label>
+                                <select class="form-select" id="target-format">
+                                    <option value="mp3">MP3</option>
+                                    <option value="wav">WAV</option>
+                                    <option value="flac">FLAC</option>
+                                    <option value="aac">AAC</option>
+                                    <option value="ogg">OGG</option>
+                                    <option value="alac">ALAC</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Quality</label>
+                                <select class="form-select" id="converter-quality">
+                                    <option value="128k">128 kbps</option>
+                                    <option value="192k" selected>192 kbps</option>
+                                    <option value="256k">256 kbps</option>
+                                    <option value="320k">320 kbps</option>
+                                    <option value="lossless">Lossless</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Convert Audio</button>
+                    </form>
+                    <div class="progress-card" id="progress-converter"><div class="progress-header"><span id="status-converter">Converting...</span><span id="percent-converter">0%</span></div><div class="progress-track"><div class="progress-fill" id="fill-converter"></div></div></div>
+                    <div class="result-area" id="result-converter"><a id="dl-converter" href="#">⬇ Download</a></div>
+                </div>
+            </div>
+
+            <!-- Audiobook Generator -->
+            <div class="tool-grid" id="tool-audiobook">
+                <div class="content-header"><h1 class="content-title">Audiobook Generator</h1><p class="content-subtitle">Generate AI narration from PDF, DOCX, TXT, or EPUB documents</p></div>
+                <div class="card">
+                    <form id="form-audiobook">
+                        <div class="form-group">
+                            <label>Document</label>
+                            <div class="drop-zone" id="drop-audiobook">
+                                <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                <p>Drop document (PDF/DOCX/TXT/EPUB)</p>
+                                <input type="file" id="input-audiobook" accept=".pdf,.docx,.txt,.epub,.doc,.md" hidden>
+                            </div>
+                            <div class="file-info" id="info-audiobook"></div>
+                        </div>
+                        <div class="metadata-grid">
+                            <div class="form-group">
+                                <label>Voice</label>
+                                <select class="form-select" id="voice-select">
+                                    <option value="af_heart">Heart (F) - Warm</option>
+                                    <option value="af_bella">Bella (F) - Professional</option>
+                                    <option value="af_sky">Sky (F) - Bright</option>
+                                    <option value="af_nicole">Nicole (F) - Calm</option>
+                                    <option value="af_sarah">Sarah (F) - Clear</option>
+                                    <option value="am_adam">Adam (M) - Energetic</option>
+                                    <option value="am_michael">Michael (M) - Deep</option>
+                                    <option value="bf_emma">Emma (F) - British</option>
+                                    <option value="bm_george">George (M) - British</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Speed</label>
+                                <select class="form-select" id="speed-select">
+                                    <option value="0.75">0.75x</option>
+                                    <option value="1.0" selected>1.0x</option>
+                                    <option value="1.25">1.25x</option>
+                                    <option value="1.5">1.5x</option>
+                                    <option value="2.0">2.0x</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Quality</label>
+                            <select class="form-select" id="quality-audiobook">
+                                <option value="64k">64 kbps</option>
+                                <option value="128k" selected>128 kbps</option>
+                                <option value="192k">192 kbps</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Generate AI Audiobook</button>
+                    </form>
+                    <div class="progress-card" id="progress-audiobook"><div class="progress-header"><span id="status-audiobook">Initializing...</span><span id="percent-audiobook">0%</span></div><div class="progress-track"><div class="progress-fill" id="fill-audiobook"></div></div><div class="progress-status" id="detail-audiobook"></div></div>
+                    <div class="result-area" id="result-audiobook"><a id="dl-audiobook" href="#">⬇ Download M4B</a></div>
+                </div>
+            </div>
+
+            <!-- EPUB to Audio -->
+            <div class="tool-grid" id="tool-epub-audio">
+                <div class="content-header"><h1 class="content-title">EPUB to Audiobook</h1><p class="content-subtitle">Convert EPUB ebooks into narrated audiobooks</p></div>
+                <div class="card">
+                    <form id="form-epub-audio">
+                        <div class="form-group">
+                            <label>EPUB File</label>
+                            <div class="drop-zone" id="drop-epub-audio">
+                                <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                                <p>Drop EPUB file</p>
+                                <input type="file" id="input-epub-audio" accept=".epub" hidden>
+                            </div>
+                            <div class="file-info" id="info-epub-audio"></div>
+                        </div>
+                        <div class="metadata-grid">
+                            <div class="form-group">
+                                <label>Voice</label>
+                                <select class="form-select" id="voice-epub">
+                                    <option value="af_heart">Heart (F)</option>
+                                    <option value="af_bella">Bella (F)</option>
+                                    <option value="am_adam">Adam (M)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Speed</label>
+                                <select class="form-select" id="speed-epub">
+                                    <option value="1.0" selected>1.0x</option>
+                                    <option value="1.25">1.25x</option>
+                                    <option value="1.5">1.5x</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create Audiobook from EPUB</button>
+                    </form>
+                    <div class="progress-card" id="progress-epub-audio"><div class="progress-header"><span id="status-epub-audio">Processing...</span><span id="percent-epub-audio">0%</span></div><div class="progress-track"><div class="progress-fill" id="fill-epub-audio"></div></div></div>
+                    <div class="result-area" id="result-epub-audio"><a id="dl-epub-audio" href="#">⬇ Download M4B</a></div>
+                </div>
+            </div>
+
+            <!-- Batch Merge -->
+            <div class="tool-grid" id="tool-merge">
+                <div class="content-header"><h1 class="content-title">Audio Merge (Glue)</h1><p class="content-subtitle">Merge multiple audio files into one seamless recording</p></div>
+                <div class="card">
+                    <form id="form-merge">
+                        <div class="form-group">
+                            <label>Audio Files (select multiple)</label>
+                            <div class="drop-zone" id="drop-merge">
+                                <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/><path d="m15 5 3 3-3 3M9 13l-3 3 3 3"/></svg>
+                                <p>Drop multiple audio files or click to browse</p>
+                                <input type="file" id="input-merge" accept=".mp3,.wav,.flac,.m4a,.aac,.ogg" multiple hidden>
+                            </div>
+                            <div class="file-info" id="info-merge"></div>
+                        </div>
+                        <div class="metadata-grid">
+                            <div class="form-group">
+                                <label>Normalize</label>
+                                <select class="form-select" id="merge-normalize">
+                                    <option value="false">Off</option>
+                                    <option value="true">On (loudness normalize)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Volume</label>
+                                <select class="form-select" id="merge-volume">
+                                    <option value="1.0">100%</option>
+                                    <option value="1.5">150%</option>
+                                    <option value="0.5">50%</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Merge & Download</button>
+                    </form>
+                    <div class="progress-card" id="progress-merge"><div class="progress-header"><span id="status-merge">Merging...</span><span id="percent-merge">0%</span></div><div class="progress-track"><div class="progress-fill" id="fill-merge"></div></div></div>
+                    <div class="result-area" id="result-merge"><a id="dl-merge" href="#">⬇ Download Merged File</a></div>
+                </div>
+            </div>
+
+            <!-- Document to EPUB -->
+            <div class="tool-grid" id="tool-epub">
+                <div class="content-header"><h1 class="content-title">Document to EPUB</h1><p class="content-subtitle">Convert PDF, DOCX, TXT, MD, HTML to ebook format</p></div>
+                <div class="card">
+                    <form id="form-epub">
+                        <div class="form-group">
+                            <label>Source Document</label>
+                            <div class="drop-zone" id="drop-epub">
+                                <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                <p>Drop document (PDF/DOCX/TXT/MD)</p>
+                                <input type="file" id="input-epub" accept=".pdf,.docx,.txt,.doc,.md,.html,.htm,.rtf" hidden>
+                            </div>
+                            <div class="file-info" id="info-epub"></div>
+                        </div>
+                        <div class="metadata-grid">
+                            <div class="form-group"><label>Title</label><input class="form-input" id="epub-title" placeholder="Book title"></div>
+                            <div class="form-group"><label>Author</label><input class="form-input" id="epub-author" placeholder="Author name"></div>
+                            <div class="form-group"><label>Language</label><select class="form-select" id="epub-language"><option value="en">English</option><option value="fr">French</option><option value="es">Spanish</option><option value="de">German</option></select></div>
+                            <div class="form-group"><label>Description</label><input class="form-input" id="epub-desc" placeholder="Brief description"></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create EPUB</button>
+                    </form>
+                    <div class="progress-card" id="progress-epub"><div class="progress-header"><span id="status-epub">Creating EPUB...</span><span id="percent-epub">0%</span></div><div class="progress-track"><div class="progress-fill" id="fill-epub"></div></div></div>
+                    <div class="result-area" id="result-epub"><a id="dl-epub" href="#">⬇ Download EPUB</a></div>
+                </div>
+            </div>
+
+            <!-- Metadata Editor -->
+            <div class="tool-grid" id="tool-metadata">
+                <div class="content-header"><h1 class="content-title">Metadata Editor</h1><p class="content-subtitle">Edit, extract, and lookup metadata for M4B/M4A files</p></div>
+                <div class="card">
+                    <div class="form-group">
+                        <label>M4B/M4A File</label>
+                        <div class="drop-zone" id="drop-metadata">
+                            <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                            <p>Drop M4B/M4A to extract metadata</p>
+                            <input type="file" id="input-metadata" accept=".m4b,.m4a" hidden>
+                        </div>
+                        <div class="file-info" id="info-metadata"></div>
+                    </div>
+                    <div class="metadata-grid">
+                        <div class="form-group"><label>Title</label><input class="form-input" id="meta-title"></div>
+                        <div class="form-group"><label>Author</label><input class="form-input" id="meta-author"></div>
+                        <div class="form-group"><label>Genre</label><input class="form-input" id="meta-genre"></div>
+                        <div class="form-group"><label>Description</label><input class="form-input" id="meta-desc"></div>
+                    </div>
+                    <div class="flex gap-1" style="margin-bottom:1rem">
+                        <button class="btn btn-secondary btn-sm" id="btn-extract-meta" style="flex:1">Extract from File</button>
+                        <button class="btn btn-secondary btn-sm" id="btn-lookup-meta" style="flex:1">Lookup Open Library</button>
+                    </div>
+                    <button class="btn btn-primary" id="btn-apply-meta">Apply & Download</button>
+                    <div class="progress-card" id="progress-metadata"><div class="progress-header"><span id="status-metadata">Processing...</span><span id="percent-metadata">0%</span></div><div class="progress-track"><div class="progress-fill" id="fill-metadata"></div></div></div>
+                    <div class="result-area" id="result-metadata"><a id="dl-metadata" href="#">⬇ Download</a></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-title"><div class="card-icon">📖</div>Open Library Lookup</div></div>
+                    <div class="metadata-grid">
+                        <div class="form-group"><label>Search Title</label><input class="form-input" id="search-title" placeholder="Book title"></div>
+                        <div class="form-group"><label>Search Author</label><input class="form-input" id="search-author" placeholder="Author name"></div>
+                    </div>
+                    <button class="btn btn-secondary" id="btn-search-openlib">Search Open Library</button>
+                    <div id="openlib-results" style="margin-top:1rem"></div>
+                </div>
+            </div>
+        </main>
     </div>
 
+    <div class="toast-container" id="toast-container"></div>
+
     <script>
-        function switchTab(id) {
-            document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            event.target.classList.add('active');
+        // ─── Navigation ─────────────────────────────────────
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                document.querySelectorAll('.tool-grid').forEach(t => t.classList.remove('active'));
+                item.classList.add('active');
+                document.getElementById('tool-' + item.dataset.tool).classList.add('active');
+            });
+        });
+
+        // ─── Theme ──────────────────────────────────────────
+        function changeTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('bpm4b-theme', theme);
+        }
+        const savedTheme = localStorage.getItem('bpm4b-theme');
+        if (savedTheme) { document.documentElement.setAttribute('data-theme', savedTheme); document.getElementById('themeSelect').value = savedTheme; }
+
+        // ─── Toast ──────────────────────────────────────────
+        function showToast(msg, type = 'info') {
+            const c = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = 'toast';
+            const icons = {info: 'ℹ️', success: '✅', error: '❌', warning: '⚠️'};
+            t.innerHTML = icons[type] + ' ' + msg;
+            c.appendChild(t);
+            setTimeout(() => t.remove(), 4000);
         }
 
-        // --- Chapter Logic ---
-        function addChapter(title = '', time = '0:00') {
-            const list = document.getElementById('list-chapters');
-            const div = document.createElement('div');
-            div.className = 'chapter-item';
-            div.innerHTML = `
-                <input type="text" class="chapter-title" placeholder="Chapter Title" value="${title}">
-                <input type="text" class="chapter-time" placeholder="0:00" value="${time}">
-                <button type="button" class="tab-btn" onclick="this.parentElement.remove()" style="padding:0.5rem">×</button>
-            `;
-            list.appendChild(div);
-        }
+        // ─── Drop Zones ─────────────────────────────────────
+        function setupDrop(prefix, formField) {
+            const drop = document.getElementById('drop-' + prefix);
+            const input = document.getElementById('input-' + prefix);
+            const info = document.getElementById('info-' + prefix);
+            if (!drop) return;
 
-        // Initialize with intro
-        if (document.getElementById('list-chapters')) addChapter('Introduction', '0:00');
-
-        // --- File Drop Handling ---
-        function setupDrop(id) {
-            const drop = document.getElementById(`drop-${id}`);
-            const input = document.getElementById(`input-${id}`);
-            const label = document.getElementById(`label-${id}`);
-
-            drop.onclick = () => input.click();
-            input.onchange = () => { label.textContent = input.files[0].name; };
-            
-            drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('active'); };
-            drop.ondragleave = () => drop.classList.remove('active');
-            drop.ondrop = (e) => {
+            drop.addEventListener('click', () => input.click());
+            input.addEventListener('change', () => {
+                if (input.files.length) {
+                    const files = Array.from(input.files);
+                    info.textContent = files.map(f => f.name).join(', ');
+                    info.classList.add('visible');
+                    if (formField) {
+                        // Attach files to the form
+                        formField.files = input.files;
+                    }
+                }
+            });
+            drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag-over'); });
+            drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
+            drop.addEventListener('drop', e => {
                 e.preventDefault();
-                drop.classList.remove('active');
+                drop.classList.remove('drag-over');
                 if (e.dataTransfer.files.length) {
                     input.files = e.dataTransfer.files;
-                    label.textContent = input.files[0].name;
+                    const files = Array.from(e.dataTransfer.files);
+                    info.textContent = files.map(f => f.name).join(', ');
+                    info.classList.add('visible');
+                    if (formField) formField.files = input.files;
                 }
-            };
+            });
         }
 
-        ['mp3', 'm4b', 'gen'].forEach(setupDrop);
+        // ─── Chapters ───────────────────────────────────────
+        function addChapterRow(title = '', time = '0:00') {
+            const c = document.getElementById('chapters-container');
+            const row = document.createElement('div');
+            row.className = 'chapter-row';
+            row.innerHTML = '<input class="ch-title" placeholder="Chapter title" value="'+title+'"><input class="ch-time" placeholder="0:00" value="'+time+'"><button type="button" class="ch-remove" onclick="this.parentElement.remove()">×</button>';
+            c.appendChild(row);
+        }
 
-        // --- API Logic ---
-        async function handleConversion(formId, apiPath, progressId) {
+        // ─── Form Handling ──────────────────────────────────
+
+        // --- Generic upload handler ---
+        async function handleUpload(formId, endpoint, progressId, resultId, dlId, buildFormData) {
             const form = document.getElementById(formId);
             const progress = document.getElementById(progressId);
             const fill = progress.querySelector('.progress-fill');
             const status = progress.querySelector('span:first-child');
-            const percent = progress.querySelector('span:last-child');
+            const pct = progress.querySelector('span:last-child');
+            const result = document.getElementById(resultId);
+            const dl = document.getElementById(dlId);
 
-            form.onsubmit = async (e) => {
+            form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const formData = new FormData(form);
-                
-                // Add manual inputs for MP3 chapters
-                if (formId === 'form-mp3') {
-                    const chaps = [];
-                    document.querySelectorAll('.chapter-item').forEach(item => {
-                        chaps.push({
-                            title: item.querySelector('.chapter-title').value,
-                            start_time: item.querySelector('.chapter-time').value
-                        });
-                    });
-                    formData.append('chapters', JSON.stringify(chaps));
-                    formData.append('mp3_file', document.getElementById('input-mp3').files[0]);
-                } else if (formId === 'form-m4b') {
-                    formData.append('source_file', document.getElementById('input-m4b').files[0]);
-                } else if (formId === 'form-gen') {
-                    formData.append('doc_file', document.getElementById('input-gen').files[0]);
-                    formData.append('voice', document.getElementById('voice-select').value);
-                }
-
-                progress.style.display = 'block';
-                fill.style.width = '10%';
-                status.textContent = 'Uploading...';
+                const fd = buildFormData ? buildFormData() : new FormData(form);
+                progress.style.display = 'block'; result.classList.remove('visible');
+                fill.style.width = '10%'; status.textContent = 'Uploading...'; pct.textContent = '10%';
 
                 try {
-                    const res = await fetch(apiPath, { method: 'POST', body: formData });
-                    if (!res.ok) throw new Error(await res.text());
-
-                    fill.style.width = '100%';
-                    percent.textContent = '100%';
-                    status.textContent = 'Complete!';
-
+                    const res = await fetch(endpoint, { method: 'POST', body: fd });
+                    if (!res.ok) { const err = await res.text(); throw new Error(err); }
+                    fill.style.width = '100%'; pct.textContent = '100%'; status.textContent = 'Complete!';
                     const blob = await res.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = "output_" + Date.now() + (apiPath.includes('mp3') ? '.m4b' : '.mp3');
-                    a.click();
+                    const url = URL.createObjectURL(blob);
+                    dl.href = url;
+                    const disp = res.headers.get('Content-Disposition') || '';
+                    const fn = disp.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                    dl.download = fn ? fn[1].replace(/['"]/g, '') : 'download';
+                    dl.textContent = '⬇ Download ' + dl.download;
+                    result.classList.add('visible');
+                    showToast('Conversion complete!', 'success');
                 } catch (err) {
                     status.textContent = 'Error: ' + err.message;
-                    fill.style.background = 'var(--error)';
+                    showToast(err.message, 'error');
                 }
-            };
+            });
         }
 
-        handleConversion('form-mp3', '/api/convert', 'progress-mp3');
-        handleConversion('form-m4b', '/api/convert', 'progress-m4b');
-        handleConversion('form-gen', '/api/generate-audiobook', 'progress-gen');
+        // MP3 → M4B
+        setupDrop('mp3');
+        handleUpload('form-mp3', '/api/convert', 'progress-mp3', 'result-mp3', 'dl-mp3', () => {
+            const fd = new FormData();
+            const file = document.getElementById('input-mp3').files[0];
+            if (!file) { showToast('Please select an MP3 file', 'error'); throw new Error('No file'); }
+            fd.append('mp3_file', file);
+            const chaps = [];
+            document.querySelectorAll('#chapters-container .chapter-row').forEach(r => {
+                const title = r.querySelector('.ch-title').value;
+                const time = r.querySelector('.ch-time').value;
+                if (title && time) chaps.push({title, start_time: time});
+            });
+            fd.append('chapters', JSON.stringify(chaps));
+            return fd;
+        });
 
+        // M4B → MP3
+        setupDrop('m4b');
+        handleUpload('form-m4b', '/api/convert', 'progress-m4b', 'result-m4b', 'dl-m4b', () => {
+            const fd = new FormData();
+            const file = document.getElementById('input-m4b').files[0];
+            if (!file) { showToast('Please select an M4B file', 'error'); throw new Error('No file'); }
+            fd.append('source_file', file);
+            return fd;
+        });
+
+        // Audio Format Converter
+        setupDrop('converter');
+        handleUpload('form-converter', '/api/convert-audio', 'progress-converter', 'result-converter', 'dl-converter', () => {
+            const fd = new FormData();
+            const file = document.getElementById('input-converter').files[0];
+            if (!file) { showToast('Please select an audio file', 'error'); throw new Error('No file'); }
+            fd.append('file', file);
+            fd.append('target_format', document.getElementById('target-format').value);
+            fd.append('quality', document.getElementById('converter-quality').value);
+            return fd;
+        });
+
+        // Audiobook Generator
+        setupDrop('audiobook');
+        handleUpload('form-audiobook', '/api/generate-audiobook', 'progress-audiobook', 'result-audiobook', 'dl-audiobook', () => {
+            const fd = new FormData();
+            const file = document.getElementById('input-audiobook').files[0];
+            if (!file) { showToast('Please select a document', 'error'); throw new Error('No file'); }
+            fd.append('doc_file', file);
+            fd.append('voice', document.getElementById('voice-select').value);
+            fd.append('speed', document.getElementById('speed-select').value);
+            fd.append('quality', document.getElementById('quality-audiobook').value);
+            return fd;
+        });
+
+        // EPUB to Audiobook
+        setupDrop('epub-audio');
+        handleUpload('form-epub-audio', '/api/epub-to-audiobook', 'progress-epub-audio', 'result-epub-audio', 'dl-epub-audio', () => {
+            const fd = new FormData();
+            const file = document.getElementById('input-epub-audio').files[0];
+            if (!file) { showToast('Please select an EPUB file', 'error'); throw new Error('No file'); }
+            fd.append('document_file', file);
+            fd.append('voice', document.getElementById('voice-epub').value);
+            fd.append('speed', document.getElementById('speed-epub').value);
+            return fd;
+        });
+
+        // Batch Merge (Audio Glue)
+        setupDrop('merge');
+        handleUpload('form-merge', '/api/audio-glue', 'progress-merge', 'result-merge', 'dl-merge', () => {
+            const fd = new FormData();
+            const files = document.getElementById('input-merge').files;
+            if (!files.length) { showToast('Please select audio files', 'error'); throw new Error('No files'); }
+            for (let f of files) fd.append('files', f);
+            fd.append('normalize', document.getElementById('merge-normalize').value);
+            fd.append('volume', document.getElementById('merge-volume').value);
+            return fd;
+        });
+
+        // Document to EPUB
+        setupDrop('epub');
+        handleUpload('form-epub', '/api/document-to-epub', 'progress-epub', 'result-epub', 'dl-epub', () => {
+            const fd = new FormData();
+            const file = document.getElementById('input-epub').files[0];
+            if (!file) { showToast('Please select a document', 'error'); throw new Error('No file'); }
+            fd.append('document_file', file);
+            fd.append('title', document.getElementById('epub-title').value);
+            fd.append('author', document.getElementById('epub-author').value);
+            fd.append('language', document.getElementById('epub-language').value);
+            fd.append('description', document.getElementById('epub-desc').value);
+            return fd;
+        });
+
+        // ─── Metadata Editor ────────────────────────────────
+        setupDrop('metadata');
+        let metadataFile = null;
+
+        document.getElementById('input-metadata').addEventListener('change', function() {
+            metadataFile = this.files[0];
+            if (metadataFile) {
+                document.getElementById('info-metadata').textContent = metadataFile.name;
+                document.getElementById('info-metadata').classList.add('visible');
+            }
+        });
+
+        document.getElementById('btn-extract-meta').addEventListener('click', async () => {
+            if (!metadataFile) { showToast('Select a file first', 'error'); return; }
+            const fd = new FormData();
+            fd.append('file', metadataFile);
+            try {
+                const res = await fetch('/api/metadata/extract', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (data.error) { showToast(data.error, 'error'); return; }
+                document.getElementById('meta-title').value = data.title || '';
+                document.getElementById('meta-author').value = data.author || '';
+                document.getElementById('meta-genre').value = data.genre || '';
+                document.getElementById('meta-desc').value = data.description || '';
+                showToast('Metadata extracted!', 'success');
+            } catch (e) { showToast('Extract failed: ' + e.message, 'error'); }
+        });
+
+        document.getElementById('btn-apply-meta').addEventListener('click', async () => {
+            if (!metadataFile) { showToast('Select a file first', 'error'); return; }
+            const fd = new FormData();
+            fd.append('file', metadataFile);
+            fd.append('metadata', JSON.stringify({
+                title: document.getElementById('meta-title').value,
+                author: document.getElementById('meta-author').value,
+                genre: document.getElementById('meta-genre').value,
+                description: document.getElementById('meta-desc').value,
+            }));
+            try {
+                const res = await fetch('/api/metadata/apply', { method: 'POST', body: fd });
+                if (!res.ok) { const err = await res.text(); throw new Error(err); }
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.getElementById('dl-metadata');
+                a.href = url; a.download = 'metadata_' + metadataFile.name; a.textContent = '⬇ Download ' + a.download;
+                document.getElementById('result-metadata').classList.add('visible');
+                showToast('Metadata applied!', 'success');
+            } catch (e) { showToast('Apply failed: ' + e.message, 'error'); }
+        });
+
+        // Open Library Search
+        document.getElementById('btn-search-openlib').addEventListener('click', async () => {
+            const title = document.getElementById('search-title').value;
+            const author = document.getElementById('search-author').value;
+            if (!title && !author) { showToast('Enter a title or author', 'warning'); return; }
+            try {
+                const res = await fetch('/api/metadata/lookup', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({title, author}),
+                });
+                const data = await res.json();
+                const div = document.getElementById('openlib-results');
+                if (!data.results || !data.results.length) { div.innerHTML = '<p style="color:var(--text-muted)">No results found</p>'; return; }
+                div.innerHTML = data.results.slice(0, 5).map(r => `
+                    <div style="padding:0.75rem;margin-bottom:0.5rem;background:var(--slate-100);border-radius:var(--radius-sm);cursor:pointer" onclick="fillMeta('${r.title.replace(/'/g, "\\'")}','${r.author.replace(/'/g, "\\'")}')">
+                        <strong>${r.title}</strong> by ${r.author}<br>
+                        <small>${r.publisher || ''} ${r.first_publish_year ? '• ' + r.first_publish_year : ''}</small>
+                    </div>
+                `).join('');
+                showToast('Found ' + data.count + ' results', 'success');
+            } catch (e) { showToast('Search failed: ' + e.message, 'error'); }
+        });
+
+        window.fillMeta = (title, author) => {
+            document.getElementById('meta-title').value = title;
+            document.getElementById('meta-author').value = author;
+            showToast('Filled metadata from library', 'success');
+        };
+
+        // ─── Init ───────────────────────────────────────────
+        document.querySelectorAll('.chapter-row').forEach(r => {
+            r.querySelector('.ch-remove').addEventListener('click', () => r.remove());
+        });
     </script>
 </body>
 </html>

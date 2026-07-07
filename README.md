@@ -1,347 +1,222 @@
-# BPM4B - Professional Multimedia Suite (v9.0.0)
+# BPM4B v12 — Professional Multimedia Processing Suite
 
-A professional multimedia processing suite for converting MP3 to M4B, M4B to MP3, and generating AI Audiobooks with high-fidelity TTS and automatic chapter support.
+<div align="center">
 
-**Available in two versions:**
-- **Python** (Flask): `pip install bpm4b` then `bpm4b`
-- **Node.js** (Express): `npm install -g bpm4b` then `bpm4b`
+[![MIT License](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)](https://choosealicense.com/licenses/mit/)
+[![PyPI Version](https://img.shields.io/pypi/v/bpm4b?style=flat-square&color=3776ab&logo=python&logoColor=white)](https://pypi.org/project/bpm4b/)
+[![Python](https://img.shields.io/badge/Python-3.8+-339933?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![FFmpeg](https://img.shields.io/badge/FFmpeg-required-007808?style=flat-square&logo=ffmpeg)
+
+**Convert MP3 ↔ M4B · Generate AI Audiobooks · Process Documents to Audio · Create EPUBs · Edit Metadata**
+
+```bash
+pip install bpm4b
+bpm4b web    # Start web interface at http://localhost:5000
+```
+
+</div>
+
+---
+
+## What's New in v12
+
+| Version | Feature |
+|---------|---------|
+| **v12** | ⚡ Audio Format Converter (MP3/WAV/FLAC/AAC/OGG/ALAC) · Metadata Editor with Open Library Lookup · Document to EPUB · Audio Glue (Batch Merge) · Folder to M4B · EPUB to Audiobook · Health Check · SSE Progress Tracking |
+| **v11** | ✍️ Interactive Pro Editor · Neural Narration Studio · Multi-voice dialogue |
+| **v10** | 📚 M4B → MP3 · Document to Audiobook · Kokoro-82M TTS |
+
+---
 
 ## Installation
 
-### Python Version (Original)
+### PyPI
+
 ```bash
 pip install bpm4b
-bpm4b web
 ```
 
-### Node.js Version
+### TTS Support (optional)
+
 ```bash
-npm install -g bpm4b
-bpm4b web
+# Standard Kokoro (recommended)
+pip install bpm4b[tts]
+
+# ONNX variant
+pip install bpm4b[tts-onnx]
+
+# All extras
+pip install bpm4b[all]
 ```
 
-**Or for local development:**
-```bash
-git clone https://github.com/jdjchelp-jpg/nodebpm4b.git
-cd nodebpm4b
-npm install
-npm start
-```
+### FFmpeg
 
-**Update:**
-```bash
-# Update Python version
-pip install --upgrade bpm4b
+FFmpeg is required and must be installed separately:
 
-# Update Node.js version
-npm update -g bpm4b
-```
+- **Windows:** Download from https://www.gyan.dev/ffmpeg/builds/ and add to PATH
+- **macOS:** `brew install ffmpeg`
+- **Linux:** `sudo apt-get install ffmpeg`
 
-## Features
-
-### 🎯 Unified Smart Mode
-- Single toggle switch: Conversion Mode vs Chapter Builder Only
-- Automatic chapter attachment to MKV/M4B output when conversion mode is ON
-- Standalone timestamp generator when mode is OFF
-
-### 📁 File Conversion Section
-- **MP3 to M4B**: Convert MP3 files to audiobook format with embedded chapters
-- **M4B to MP3**: High-fidelity conversion from M4B/M4A containers to MP3 (NEW in v9)
-- **Document to Audiobook**: Generate high-quality voiceovers from PDF/Text using Kokoro-82M AI (NEW in v9)
-- Drag-and-drop file upload for all tools
-- Real-time progress monitoring with SSE (Server-Sent Events)
-- Visual progress bar and live terminal logging
-
-### ⏱ Automatic Chapter Builder
-- **Always enabled** - core functionality
-- Enter chapter title and duration (minutes or seconds toggle)
-- System automatically:
-  - Converts input to proper format
-  - Accumulates duration to cumulative total
-  - Calculates next chapter start timestamp
-  - Generates proper HH:MM:SS format
-- No manual math required - all timestamps auto-generate
-- Batch import/export chapter lists
-- Real-time preview updates
-
-### ⚙ Settings Panel
-- Dark / Light mode toggle
-- Modern toggle switches (not checkboxes)
-- Glassmorphism card design
-- Smooth animations and transitions
-- Responsive layout optimized for desktop
-
-### 🚀 Performance Improvements
-- Faster parsing with optimized algorithms
-- Non-blocking UI with background conversion
-- Proper error handling and validation
-- File size validation before processing
-- Automatic cleanup of temporary files
-
-### 📋 Professional Features
-- Copy-to-clipboard buttons for generated commands
-- Real-time updating preview panel
-- FFmpeg command preview (self-service mode)
-- Export chapters to .txt format
-- Modern, clean, professional SaaS-like interface
-
-## Prerequisites
-
-### Node.js Version
-**No additional prerequisites needed!** FFmpeg is bundled with the Node.js version, so it works out of the box.
-
-### Python Version (Original)
-- Python 3.8+
-- FFmpeg (required for MP3 to M4B conversion)
-
-### Installing FFmpeg (Python Version Only)
-
-**Windows:**
-1. Go to https://www.gyan.dev/ffmpeg/builds/ (recommended Windows builds)
-2. Download "ffmpeg-git-full.7z" or "ffmpeg-release-full.7z"
-3. Extract the archive using 7-Zip or similar
-4. Open the extracted folder, navigate to the `bin` folder
-5. Copy the path to the `bin` folder (contains ffmpeg.exe)
-6. Add to PATH:
-   - Press Win + X, select "System"
-   - Click "Advanced system settings"
-   - Click "Environment Variables"
-   - Under "System variables", find and select "Path", click "Edit"
-   - Click "New" and paste the path to the `bin` folder
-   - Click OK on all windows
-7. Open a new command prompt and verify: `ffmpeg -version`
-
-**macOS:**
-```bash
-brew install ffmpeg
-```
-
-**Ubuntu/Debian:**
-```bash
-sudo apt-get update
-sudo apt-get install ffmpeg
-```
-
-**Note:** The Python version requires FFmpeg. The Node.js version includes FFmpeg automatically.
+---
 
 ## Usage
 
 ### Web Interface
 
-Start the web server and open your browser to http://localhost:5000:
+```bash
+bpm4b web                        # Start at http://localhost:5000
+bpm4b web --port 8080            # Custom port
+bpm4b web --host 127.0.0.1       # Custom host
+```
+
+### CLI — MP3 ↔ M4B
 
 ```bash
-# Start the server
-bpm4b web
-
-# Or with custom options
-bpm4b web --port 8080
-bpm4b web --host 127.0.0.1 --debug
+bpm4b convert input.mp3 output.m4b                              # Basic
+bpm4b convert input.mp3 output.m4b --quality 128k              # Custom quality
+bpm4b convert input.mp3 output.m4b --chapter "Intro" 0 --chapter "Ch1" 300  # With chapters
+bpm4b convert input.m4b output.mp3                             # M4B to MP3
 ```
 
-The web interface allows you to:
-- Upload MP3 files through a simple form
-- Add custom chapter markers with titles and timestamps
-- Download the converted M4B audiobook
-
-### Command Line (No Web Interface)
-
-Convert MP3 to M4B directly from the terminal:
+### CLI — Audiobook Generation
 
 ```bash
-# Basic conversion
-bpm4b convert input.mp3 output.m4b
-
-# With chapter markers
-bpm4b convert input.mp3 output.m4b --chapter "Introduction" 0
-bpm4b convert input.mp3 output.m4b --chapter "Chapter 1" 3600 --chapter "Chapter 2" 7200
-
-# Multiple chapters
-bpm4b convert book.mp3 book.m4b \\
-  --chapter "Prologue" 0 \\
-  --chapter "Chapter 1" 300 \\
-  --chapter "Chapter 2" 1800
-
-# Multiple chapters with MM:SS format
-bpm4b convert book.mp3 book.m4b \\
- --chapter "Prologue" "0:00" \\
- --chapter "Chapter 1" "5:00" \\
- --chapter "Chapter 2" "30:00"
-
-# Mixed formats (seconds and MM:SS)
-bpm4b convert book.mp3 book.m4b \\
- --chapter "Intro" 0 \\
- --chapter "Chapter 1" "6:30" \\
- --chapter "Chapter 2" 3600
+bpm4b audiobook book.pdf book.m4b                             # PDF to audiobook
+bpm4b audiobook book.docx book.m4b --voice af_bella           # Custom voice
+bpm4b audiobook book.epub book.m4b --speed 1.25               # Faster playback
+bpm4b audiobook book.txt book.m4b --preview                   # Preview chapters only
 ```
 
-Chapter start times accept:
-- Seconds as integer (e.g., `390`)
-- Minutes:seconds format (e.g., `"6:30"` or `"6:30.5"` for fractional seconds)
-
-### Using Python Module
-
-Alternatively, you can run it as a Python module:
+### CLI — EPUB Creation
 
 ```bash
-python -m bpm4b.cli web --port 5000
-python -m bpm4b.cli convert input.mp3 output.m4b
+bpm4b epub book.pdf book.epub                                 # PDF to EPUB
+bpm4b epub book.docx book.epub --title "My Book" --author "Me"  # With metadata
+bpm4b epub index.html book.epub                               # HTML to EPUB
 ```
 
-### Using the CLI (Package Installation)
-
-After installing with `pip install -e .`, use the `bpm4b` command:
+### CLI — Audio Merge (Glue)
 
 ```bash
-# Start web interface
-bpm4b web
-
-# Web interface with options
-bpm4b web --port 8080
-bpm4b web --host 127.0.0.1 --debug
-
-# Convert MP3 to M4B directly
-bpm4b convert input.mp3 output.m4b
-bpm4b convert input.mp3 output.m4b --chapter "Chapter 1" 0
-
-# Show help
-bpm4b --help
-bpm4b web --help
-bpm4b convert --help
+bpm4b audio-glue intro.mp3 chapter1.mp3 chapter2.mp3 book.m4b   # Merge files
+bpm4b audio-glue *.mp3 book.m4b --normalize                    # With normalization
+bpm4b audio-glue a.mp3 b.mp3 out.m4b --volume 1.5             # Boost volume
 ```
 
-### Using Python Module
-
-Alternatively, you can run it as a Python module:
+### CLI — Health Check
 
 ```bash
-python -m bpm4b.cli web --port 5000
-python -m bpm4b.cli convert input.mp3 output.m4b
+bpm4b health
 ```
 
-### Using the Traditional Method
+---
 
-If you installed dependencies only (without the package):
+## Features
 
-```bash
-python app.py
-```
+### 🔄 MP3 ↔ M4B Conversion
+- MP3 → M4B with embedded chapter markers
+- M4B → MP3 high-fidelity extraction
+- Custom audio quality (64k–256k)
+- Chapter timestamps in seconds or MM:SS format
 
-Then open your browser and navigate to:
-```
-http://localhost:5000
-```
+### 🎙️ AI Audiobook Generation
+- Powered by **Kokoro-82M** Local TTS engine (no API key needed)
+- 50+ voices across 9 languages
+- Adjustable speed (0.5x–2.0x)
+- Automatic chapter detection
+- Support for PDF, DOCX, TXT, EPUB, MD
 
-### Using the Tool
+### 🔊 Audio Format Converter
+- Convert between MP3, WAV, FLAC, AAC, OGG, ALAC
+- Configurable bitrate and quality settings
+- Lossless options for FLAC and WAV
 
-Once the server is running:
+### 📖 Document to EPUB
+- Convert PDF, DOCX, TXT, MD, HTML, RTF to EPUB
+- Automatic chapter detection and splitting
+- Custom metadata (title, author, language)
+- Styled XHTML output with CSS
 
-**MP3 to M4B**: Upload an MP3 file, add chapters using the automatic chapter builder, and click "Convert to M4B"
-- Automatically converts to M4B format (iTunes/Apple Books compatible)
-- Chapters automatically embedded with titles and timestamps
-- Uses FFmpeg for high-quality AAC audio (64kbps - 256kbps)
+### 🏷️ Metadata Editor
+- Extract metadata from M4B/M4A files
+- Edit title, author, genre, description
+- Embed cover art
+- Lookup metadata from **Open Library**
 
-**M4B to MP3**: Upload an M4B/M4A file and convert it to a standard MP3
-- High-fidelity conversion using the libmp3lame encoder
-- Perfect for playback on legacy devices or sharing
+### 🔀 Batch Merge (Audio Glue)
+- Merge multiple audio files into one
+- Optional loudness normalization
+- Volume adjustment
+- Seamless gapless concatenation
 
-**Audiobook Gen**: Upload a PDF or Text document to generate a full audiobook
-- Powered by Kokoro-82M Local TTS engine
-- High-quality, human-like voice synthesis
-- Automatic chapter detection and manifest generation
+### 📁 Folder to M4B
+- Batch convert entire folders of audio files
+- Auto-generated chapter markers from filenames
+- Parallel processing support
+
+---
 
 ## API Endpoints
 
-### POST /api/mp3-to-m4b
-Converts an MP3 file to M4B with optional chapters.
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/convert` | POST | Unified MP3↔M4B conversion |
+| `/api/mp3-to-m4b` | POST | Explicit MP3 → M4B |
+| `/api/generate-audiobook` | POST | Document to audiobook via TTS |
+| `/api/audiobook` | POST | Full chapter-aware audiobook pipeline |
+| `/api/epub-to-audiobook` | POST | EPUB to narrated audiobook |
+| `/api/document-to-epub` | POST | Convert document to EPUB |
+| `/api/convert-audio` | POST | Audio format conversion |
+| `/api/audio-glue` | POST | Merge multiple audio files |
+| `/api/metadata/extract` | POST | Extract metadata from M4B/M4A |
+| `/api/metadata/apply` | POST | Apply metadata to M4B/M4A |
+| `/api/metadata/lookup` | POST | Lookup metadata from Open Library |
+| `/api/preview-chapters` | POST | Preview chapter detection |
+| `/api/voices` | GET | List available TTS voices |
+| `/api/health` | GET | System health check |
+| `/api/cleanup` | POST | Clean old uploaded/output files |
 
-**Form Data:**
-- `mp3_file`: The MP3 file to convert
-- `chapters` (optional): JSON array of chapter objects. `start_time` accepts seconds (number) or MM:SS format (string):
-```json
-[
-  {"title": "Chapter 1", "start_time": 0},
-  {"title": "Chapter 2", "start_time": "6:30"},
-  {"title": "Chapter 3", "start_time": 3600}
-]
-```
+---
 
-### POST /api/convert
-Converts MP3 to M4B or M4B to MP3.
+## Requirements
 
-**Form Data:**
-- `source_file`: The file to convert
-- `output_name`: Custom filename
-- `audio_quality`: Bitrate (e.g., '128k', '256k')
-- `chapters` (optional): JSON array of chapter objects.
+- **Python 3.8+**
+- **FFmpeg** (required for all audio operations)
+- **Kokoro** (optional, for TTS/audiobook generation)
 
-### POST /api/generate-audiobook
-Generates an audiobook from a document.
-
-**Form Data:**
-- `doc_file`: The PDF or Text file
-- `voice`: Selection from available Kokoro voices
-- `output_name`: Custom filename
-
-### GET /api/health
-Health check endpoint. Returns JSON with status and FFmpeg availability.
-
-**Response:**
-Returns an M4B file as a download.
+---
 
 ## Project Structure
 
-### Python Version
 ```
-.
-├── bpm4b/              # Main package directory
-│   ├── __init__.py    # Package initialization
-│   ├── app.py         # Flask application (for local development)
-│   ├── cli.py         # Command-line interface entry point
-│   ├── core.py        # Shared core functions
-│   ├── api/
-│   │   ├── __init__.py
-│   │   └── index.py   # Vercel serverless function
+bpm4b/
+├── bpm4b/
+│   ├── __init__.py          # Package metadata (v12.0.0)
+│   ├── app.py               # Flask web application (all endpoints)
+│   ├── cli.py               # Command-line interface
+│   ├── core.py              # Core conversion functions
+│   ├── audiobook_builder.py # Full audiobook pipeline
+│   ├── chapter_detector.py  # Chapter detection engine
+│   ├── document_parser.py   # Document parsing (PDF/DOCX/EPUB/TXT)
+│   ├── document_to_epub.py  # Document to EPUB converter
+│   ├── metadata.py          # Metadata extract/apply/lookup
+│   ├── tts.py               # TTS engine (Kokoro)
 │   └── templates/
-│       └── index.html # Frontend interface
-├── setup.py           # Package installation configuration
-├── vercel.json        # Vercel configuration
-├── requirements.txt   # Python dependencies
-├── uploads/           # Temporary uploaded files (created automatically)
-├── outputs/           # Generated files (created automatically)
-└── README.md          # This file
+│       └── index.html       # Web interface
+├── setup.py                 # Package configuration
+├── pyproject.toml           # Build configuration
+└── README.md                # This file
 ```
 
-### Node.js Version
-```
-.
-├── bin/
-│   └── bpm4b.js       # CLI entry point
-├── lib/
-│   ├── core.js        # Core conversion functions
-│   └── server.js      # Express web server
-├── templates/
-│   └── index.ejs      # Frontend template
-├── api/
-│   └── index.js       # Vercel serverless function
-├── examples/          # Usage examples
-├── test/              # Unit tests
-├── package.json       # NPM package configuration
-├── vercel.json        # Vercel configuration
-├── uploads/           # Temporary uploaded files (created automatically)
-├── outputs/           # Generated files (created automatically)
-└── README_NODE.md     # Node.js specific documentation
-```
-
-## Notes
-
-- Maximum file size for uploads: 2GB
-- SSE (Server-Sent Events) used for real-time progress updates
-- Kokoro AI engine runs locally (no API keys or external costs)
-- M4B output files can be large (typically 0.96-2GB per hour of audio depending on bitrate)
-- Optimized for high-speed conversion on Windows/macOS/Linuxion:
-- **X (Twitter)**: [@jdjchelp](https://x.com/jdjchelp)
+---
 
 ## License
 
-MIT
+MIT License — see LICENSE file for details.
+
+---
+
+## Contact
+
+- **X (Twitter):** [@jdjchelp](https://x.com/jdjchelp)
+- **Issues:** https://github.com/jdjchelp-jpg/bpm4b/issues
