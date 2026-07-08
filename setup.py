@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="bpm4b",
-    version="12.0.0",
+    version="13.0.0",
     author="JDJCHELP",
     author_email="JDJCHELP@proton.me",
     description="Professional Multimedia Suite - MP3/M4B Converter, AI Audiobooks, EPUB Tools, Document Processing",

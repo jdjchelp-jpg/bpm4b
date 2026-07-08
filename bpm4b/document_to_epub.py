@@ -1,7 +1,7 @@
 """
 Document to EPUB Converter
 Converts various document formats (PDF, DOCX, TXT, MD, HTML, RTF) to EPUB.
-Ported from Node.js v12 lib/document-to-epub.js
+Ported from Node.js lib/document-to-epub.js
 """
 
 import os

@@ -1,7 +1,8 @@
 """
 Metadata Module
 Extract, apply, and look up metadata for M4B/M4A audiobook files.
-Ported from Node.js v12 lib/server.js metadata endpoints.
+Enhanced in v13 to integrate with cover_art and text_processor modules.
+Ported from Node.js lib/server.js metadata endpoints.
 """
 
 import os
@@ -11,6 +12,14 @@ import subprocess
 import logging
 import base64
 import requests
+
+from .cover_art import (
+    extract_cover_art as _extract_cover_binary,
+    inject_cover_art as _inject_cover_binary,
+    extract_chapters_from_m4b,
+    write_chapters_to_m4b,
+    inherit_metadata_from_first_file,
+)
 
 logger = logging.getLogger(__name__)
 

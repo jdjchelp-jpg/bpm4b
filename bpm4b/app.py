@@ -5,7 +5,7 @@ import logging
 import time
 import tempfile as tf
 import shutil
-from flask import Flask, request, send_file, jsonify, render_template
+from flask import Flask, request, send_file, jsonify, render_template, Response, stream_with_context
 from .core import (
     convert_mp3_to_m4b, convert_m4b_to_mp3, parse_time_to_seconds,
     convert_audio_format, audio_glue, folder_to_m4b, get_audio_duration,
@@ -36,7 +36,7 @@ def health():
     ffmpeg = check_ffmpeg()
     return jsonify({
         'status': 'ok',
-        'version': '12.0.0',
+        'version': '13.0.0',
         'ffmpeg': ffmpeg,
         'upload_folder': os.path.abspath(app.config['UPLOAD_FOLDER']),
         'output_folder': os.path.abspath(app.config['OUTPUT_FOLDER']),
@@ -48,6 +48,7 @@ def health():
 @app.route('/api/convert', methods=['POST'])
 def convert():
     """Unified conversion endpoint (MP3↔M4B)."""
+    from .job_database import get_db
     try:
         file = request.files.get('source_file') or request.files.get('mp3_file')
         if not file:
@@ -55,6 +56,7 @@ def convert():
 
         ext = os.path.splitext(file.filename)[1].lower()
         is_mp3 = ext == '.mp3'
+        job_id = str(uuid.uuid4())
 
         source_filename = f"{uuid.uuid4()}{ext}"
         source_path = os.path.join(app.config['UPLOAD_FOLDER'], source_filename)
@@ -67,10 +69,19 @@ def convert():
         output_filename = f"{os.path.splitext(file.filename)[0]}{output_ext}"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], f"{uuid.uuid4()}{output_ext}")
 
+        # Log job
+        db = get_db()
+        db.create_job(job_id, 'convert', source_path, output_path)
+
+        start = time.time()
         if is_mp3:
             convert_mp3_to_m4b(source_path, output_path, chapters)
         else:
             convert_m4b_to_mp3(source_path, output_path)
+
+        elapsed = time.time() - start
+        db.complete_job(job_id, output_path, processing_time_seconds=elapsed,
+                        file_size_bytes=os.path.getsize(output_path))
 
         os.remove(source_path)
         return send_file(output_path, as_attachment=True, download_name=output_filename)
@@ -109,16 +120,16 @@ def mp3_to_m4b():
         return jsonify({'error': str(e)}), 500
 
 
-# ─── Document to Audiobook (via TTS) ─────────────────────────
+# ─── Document to Audiobook (via abogen) ──────────────────────
 
 @app.route('/api/generate-audiobook', methods=['POST'])
 def generate_audiobook():
-    """Document to Audiobook using Kokoro TTS."""
-    try:
-        from .document_parser import parse_document
-        from .tts import generate_tts
-    except ImportError as e:
-        return jsonify({'error': f'TTS dependencies missing: {e}. Run: pip install kokoro soundfile'}), 500
+    """Document to Audiobook using abogen + BPM4B preprocessing."""
+    from .abogen_integration import run_abogen, is_abogen_available
+    from .job_database import get_db
+
+    if not is_abogen_available():
+        return jsonify({'error': 'abogen not found. Install: pip install abogen'}), 500
 
     try:
         file = request.files.get('doc_file')
@@ -127,24 +138,27 @@ def generate_audiobook():
 
         voice = request.form.get('voice', 'af_heart')
         speed = float(request.form.get('speed', 1.0))
+        job_id = str(uuid.uuid4())
 
         ext = os.path.splitext(file.filename)[1].lower()
         source_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}{ext}")
         file.save(source_path)
 
-        doc_data = parse_document(source_path)
-        text = doc_data['text']
-
-        wav_path = os.path.join(app.config['OUTPUT_FOLDER'], f"{uuid.uuid4()}.wav")
-        generate_tts(text, wav_path, voice=voice, speed=speed)
-
         output_filename = f"{os.path.splitext(file.filename)[0]}.m4b"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], f"{uuid.uuid4()}.m4b")
-        convert_mp3_to_m4b(wav_path, output_path)
+
+        db = get_db()
+        db.create_job(job_id, 'abogen', source_path, output_path,
+                      {'voice': voice, 'speed': speed})
+
+        result = run_abogen(source_path, output_path, {
+            'voice': voice, 'speed': speed, 'format': 'm4b'
+        })
+
+        db.complete_job(job_id, output_path,
+                       file_size_bytes=os.path.getsize(output_path))
 
         os.remove(source_path)
-        os.remove(wav_path)
-
         return send_file(output_path, as_attachment=True, download_name=output_filename)
 
     except Exception as e:
@@ -156,38 +170,9 @@ def generate_audiobook():
 
 @app.route('/api/audiobook', methods=['POST'])
 def audiobook_full():
-    """Full chapter-aware audiobook pipeline via audiobook_builder."""
-    try:
-        from .audiobook_builder import build_audiobook
-    except ImportError as e:
-        return jsonify({'error': f'Dependencies missing: {e}'}), 500
-
-    try:
-        file = request.files.get('doc_file')
-        if not file:
-            return jsonify({'error': 'No document provided'}), 400
-
-        voice = request.form.get('voice', 'af_heart')
-        speed = float(request.form.get('speed', 1.0))
-        quality = request.form.get('quality', '64k')
-
-        ext = os.path.splitext(file.filename)[1].lower()
-        source_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}{ext}")
-        file.save(source_path)
-
-        output_filename = f"{os.path.splitext(file.filename)[0]}.m4b"
-        output_path = os.path.join(app.config['OUTPUT_FOLDER'], f"{uuid.uuid4()}.m4b")
-
-        result = build_audiobook(source_path, output_path, {
-            'voice': voice, 'speed': speed, 'audio_quality': quality
-        })
-
-        os.remove(source_path)
-        return send_file(output_path, as_attachment=True, download_name=output_filename)
-
-    except Exception as e:
-        logger.error(f"Error in audiobook_full: {e}")
-        return jsonify({'error': str(e)}), 500
+    """Full chapter-aware audiobook pipeline."""
+    # Redirect to abogen endpoint
+    return generate_audiobook()
 
 
 # ─── Preview Chapters ────────────────────────────────────────
@@ -195,11 +180,7 @@ def audiobook_full():
 @app.route('/api/preview-chapters', methods=['POST'])
 def preview_chapters():
     """Preview detected chapters without generating audio."""
-    try:
-        from .audiobook_builder import preview_chapters as _preview
-    except ImportError as e:
-        return jsonify({'error': str(e)}), 500
-
+    from .abogen_integration import preprocess_for_abogen
     try:
         file = request.files.get('doc_file')
         if not file:
@@ -209,12 +190,50 @@ def preview_chapters():
         source_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}{ext}")
         file.save(source_path)
 
-        result = _preview(source_path)
+        result = preprocess_for_abogen(source_path, {
+            'resolve_roman': True,
+            'stat_block_mode': 'summarize',
+        })
         os.remove(source_path)
-        return jsonify(result)
+        return jsonify({
+            'chapters': result['chapters'],
+            'chapter_count': result['chapter_count'],
+            'total_chars': result['total_chars'],
+            'stat_blocks_found': result.get('stat_blocks_found', 0),
+        })
 
     except Exception as e:
         logger.error(f"Error in preview_chapters: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# ─── BPM4B Magic (Preprocessing) ────────────────────────────
+
+@app.route('/api/magic', methods=['POST'])
+def magic_endpoint():
+    """Apply BPM4B preprocessing magic to a document."""
+    from .abogen_integration import preprocess_for_abogen
+    try:
+        file = request.files.get('document_file')
+        if not file:
+            return jsonify({'error': 'No document provided'}), 400
+
+        ext = os.path.splitext(file.filename)[1].lower()
+        source_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}{ext}")
+        file.save(source_path)
+
+        options = {
+            'resolve_roman': request.form.get('resolve_roman', 'true').lower() == 'true',
+            'stat_block_mode': request.form.get('stat_block_mode', 'summarize'),
+        }
+
+        result = preprocess_for_abogen(source_path, options)
+        os.remove(source_path)
+
+        return jsonify(result)
+
+    except Exception as e:
+        logger.error(f"Error in magic: {e}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -222,13 +241,8 @@ def preview_chapters():
 
 @app.route('/api/epub-to-audiobook', methods=['POST'])
 def epub_to_audiobook():
-    """EPUB to Audiobook conversion using TTS."""
-    try:
-        from .tts import generate_tts
-        from .chapter_detector import detect_chapters
-    except ImportError as e:
-        return jsonify({'error': f'TTS dependencies missing: {e}'}), 500
-
+    """EPUB to Audiobook conversion using abogen."""
+    from .abogen_integration import run_abogen
     try:
         file = request.files.get('document_file') or request.files.get('doc_file')
         if not file:
@@ -236,29 +250,15 @@ def epub_to_audiobook():
 
         voice = request.form.get('voice', 'af_heart')
         speed = float(request.form.get('speed', 1.0))
-        engine = request.form.get('engine', 'bpm4b')
-        quality = request.form.get('quality', '64k')
 
         source_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}.epub")
         file.save(source_path)
 
-        from .document_parser import parse_document
-        doc = parse_document(source_path)
-        text = doc.get('text', '')
-        headings = doc.get('headings', [])
-
-        if not text:
-            return jsonify({'error': 'Could not extract text from EPUB'}), 400
-
-        chapters = detect_chapters(text, headings)
-
-        # Generate audio for each chapter
-        from .audiobook_builder import build_audiobook
         output_filename = f"{os.path.splitext(file.filename)[0]}.m4b"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], f"{uuid.uuid4()}.m4b")
 
-        result = build_audiobook(source_path, output_path, {
-            'voice': voice, 'speed': speed, 'audio_quality': quality
+        run_abogen(source_path, output_path, {
+            'voice': voice, 'speed': speed, 'format': 'm4b'
         })
 
         os.remove(source_path)
@@ -344,7 +344,8 @@ def convert_audio():
 
 @app.route('/api/audio-glue', methods=['POST'])
 def audio_glue_endpoint():
-    """Merge multiple audio files into one."""
+    """Merge multiple audio files into one (zero-copy by default)."""
+    from .splicer import splice_audio_files
     try:
         files = request.files.getlist('files')
         if not files or len(files) < 1:
@@ -363,7 +364,8 @@ def audio_glue_endpoint():
         output_filename = f"merged_{uuid.uuid4().hex[:8]}.m4b"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
 
-        audio_glue(input_paths, output_path, normalize=normalize, volume=volume)
+        splice_audio_files(input_paths, output_path, stream_copy=not normalize,
+                          normalize=normalize, volume=volume)
 
         for p in input_paths:
             try:
@@ -398,8 +400,15 @@ def metadata_extract():
         file.save(source_path)
 
         metadata = extract_metadata(source_path)
-        os.remove(source_path)
 
+        # Also extract chapters if available
+        from .cover_art import extract_chapters_from_m4b
+        chapters = extract_chapters_from_m4b(source_path)
+        if chapters:
+            metadata['chapters'] = chapters
+            metadata['chapter_count'] = len(chapters)
+
+        os.remove(source_path)
         return jsonify(metadata)
 
     except Exception as e:
@@ -489,8 +498,8 @@ def folder_to_m4b_endpoint():
             return jsonify({'error': 'At least one audio file required'}), 400
 
         quality = request.form.get('quality', '128k')
+        use_cache = request.form.get('cache', 'false').lower() == 'true'
 
-        # Save all files to a temp folder
         folder_path = tf.mkdtemp(prefix='bpm4b_folder_')
         try:
             for f in files:
@@ -502,6 +511,7 @@ def folder_to_m4b_endpoint():
 
             result = folder_to_m4b(folder_path, output_path, {
                 'audio_quality': quality,
+                'cache_enabled': use_cache,
             })
 
             return send_file(output_path, as_attachment=True, download_name=output_filename)
@@ -514,12 +524,385 @@ def folder_to_m4b_endpoint():
         return jsonify({'error': str(e)}), 500
 
 
+# ─── Cover Art ───────────────────────────────────────────────
+
+@app.route('/api/cover/extract', methods=['POST'])
+def cover_extract():
+    """Extract cover art from audio file."""
+    from .cover_art import extract_cover_art
+    try:
+        file = request.files.get('file')
+        if not file:
+            return jsonify({'error': 'No file provided'}), 400
+
+        ext = os.path.splitext(file.filename)[1].lower()
+        source_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}{ext}")
+        file.save(source_path)
+
+        cover_path = os.path.join(app.config['OUTPUT_FOLDER'], f"{uuid.uuid4()}_cover.jpg")
+        data = extract_cover_art(source_path, cover_path)
+        os.remove(source_path)
+
+        if data:
+            return send_file(cover_path, as_attachment=True,
+                           download_name=f"{os.path.splitext(file.filename)[0]}_cover.jpg")
+        return jsonify({'error': 'No cover art found'}), 404
+
+    except Exception as e:
+        logger.error(f"Error in cover_extract: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/cover/inject', methods=['POST'])
+def cover_inject():
+    """Inject cover art into audio file."""
+    from .cover_art import inject_cover_art
+    try:
+        audio_file = request.files.get('audio_file')
+        cover_file = request.files.get('cover_file')
+        if not audio_file or not cover_file:
+            return jsonify({'error': 'Both audio_file and cover_file required'}), 400
+
+        audio_ext = os.path.splitext(audio_file.filename)[1].lower()
+        audio_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}{audio_ext}")
+        audio_file.save(audio_path)
+
+        cover_ext = os.path.splitext(cover_file.filename)[1].lower()
+        cover_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}{cover_ext}")
+        cover_file.save(cover_path)
+
+        output_ext = audio_ext or '.m4b'
+        output_filename = f"with_cover_{audio_file.filename}"
+        output_path = os.path.join(app.config['OUTPUT_FOLDER'], f"{uuid.uuid4()}{output_ext}")
+
+        inject_cover_art(audio_path, cover_path, output_path)
+
+        os.remove(audio_path)
+        os.remove(cover_path)
+
+        return send_file(output_path, as_attachment=True, download_name=output_filename)
+
+    except Exception as e:
+        logger.error(f"Error in cover_inject: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# ─── Demux (M4B → MP3 chapters) ────────────────────────────
+
+@app.route('/api/demux', methods=['POST'])
+def demux_endpoint():
+    """Split M4B into individual MP3 chapter tracks."""
+    from .demuxer import demux_m4b_to_mp3
+    from .path_utils import temp_dir, cleanup_dir
+    try:
+        file = request.files.get('file')
+        if not file:
+            return jsonify({'error': 'No file provided'}), 400
+
+        quality = request.form.get('quality', '128k')
+
+        source_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}.m4b")
+        file.save(source_path)
+
+        output_dir = temp_dir('bpm4b_demux_')
+        try:
+            results = demux_m4b_to_mp3(source_path, output_dir, quality=quality)
+
+            # Zip the results
+            import zipfile
+            zip_filename = f"{os.path.splitext(file.filename)[0]}_chapters.zip"
+            zip_path = os.path.join(app.config['OUTPUT_FOLDER'], f"{uuid.uuid4()}.zip")
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+                for r in results:
+                    if r.get('output_path') and os.path.exists(r['output_path']):
+                        zf.write(r['output_path'], os.path.basename(r['output_path']))
+
+            return send_file(zip_path, as_attachment=True, download_name=zip_filename)
+
+        finally:
+            cleanup_dir(output_dir)
+            os.remove(source_path)
+
+    except Exception as e:
+        logger.error(f"Error in demux: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# ─── SSE Progress Stream ─────────────────────────────────────
+
+@app.route('/api/progress/stream')
+def progress_stream():
+    """SSE endpoint for real-time progress updates."""
+    from .sse_progress import get_progress_manager
+    job_id = request.args.get('job_id', '')
+
+    if not job_id:
+        return jsonify({'error': 'job_id query parameter required'}), 400
+
+    mgr = get_progress_manager()
+    return Response(
+        stream_with_context(mgr.get_events_generator(job_id)),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no',
+        }
+    )
+
+
+@app.route('/api/progress/status', methods=['GET'])
+def progress_status():
+    """Get the current status of a job."""
+    from .sse_progress import get_progress_manager
+    job_id = request.args.get('job_id', '')
+    if not job_id:
+        return jsonify({'error': 'job_id required'}), 400
+    status = get_progress_manager().get_job_status(job_id)
+    if status:
+        return jsonify(status)
+    return jsonify({'error': 'Job not found'}), 404
+
+
+# ─── Job History ─────────────────────────────────────────────
+
+@app.route('/api/jobs', methods=['GET'])
+def list_jobs():
+    """List conversion job history."""
+    from .job_database import get_db
+    limit = int(request.args.get('limit', 50))
+    status = request.args.get('status')
+    job_type = request.args.get('type')
+    jobs = get_db().list_jobs(limit=limit, status=status, job_type=job_type)
+    return jsonify({'jobs': jobs, 'count': len(jobs)})
+
+
+@app.route('/api/jobs/stats', methods=['GET'])
+def job_stats():
+    """Get job history statistics."""
+    from .job_database import get_db
+    return jsonify(get_db().get_stats())
+
+
+@app.route('/api/jobs/clear', methods=['POST'])
+def clear_jobs():
+    """Clear job history."""
+    from .job_database import get_db
+    count = get_db().clear_history()
+    return jsonify({'cleared': count})
+
+
+# ─── Pre-Flight Storage Estimate ────────────────────────────
+
+@app.route('/api/estimate', methods=['POST'])
+def estimate_endpoint():
+    """Estimate output file size before conversion."""
+    from .ffmpeg_utils import estimate_output_size, estimate_batch_output_size
+    try:
+        files = request.files.getlist('files')
+        if not files:
+            return jsonify({'error': 'No files provided'}), 400
+
+        bitrate = int(request.form.get('bitrate', 64))
+        output_format = request.form.get('format', 'm4b')
+
+        # Save files temporarily
+        file_paths = []
+        for f in files:
+            path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}_{f.filename}")
+            f.save(path)
+            file_paths.append(path)
+
+        try:
+            if len(file_paths) == 1:
+                est = estimate_output_size(file_paths[0], bitrate, output_format)
+            else:
+                est = estimate_batch_output_size(file_paths, bitrate, output_format)
+            return jsonify(est)
+        finally:
+            for p in file_paths:
+                try:
+                    os.remove(p)
+                except OSError:
+                    pass
+
+    except Exception as e:
+        logger.error(f"Error in estimate: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# ─── Silence Chapter Detection ──────────────────────────────
+
+@app.route('/api/silence-chapter', methods=['POST'])
+def silence_chapter_endpoint():
+    """Auto-detect chapters from silence regions."""
+    from .ffmpeg_utils import auto_chapter_from_silence
+    try:
+        file = request.files.get('file')
+        if not file:
+            return jsonify({'error': 'No file provided'}), 400
+
+        threshold = request.form.get('threshold', '-30dB')
+        min_silence = float(request.form.get('min_silence', 2.0))
+        min_chapter = float(request.form.get('min_chapter', 60.0))
+
+        source_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}.wav")
+        file.save(source_path)
+
+        try:
+            chapters = auto_chapter_from_silence(
+                source_path,
+                noise_threshold=threshold,
+                min_silence_duration=min_silence,
+                min_chapter_duration=min_chapter,
+            )
+            return jsonify({'chapters': chapters, 'count': len(chapters)})
+        finally:
+            os.remove(source_path)
+
+    except Exception as e:
+        logger.error(f"Error in silence_chapter: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# ─── Trim Silence ────────────────────────────────────────────
+
+@app.route('/api/trim', methods=['POST'])
+def trim_endpoint():
+    """Trim border silence from audio."""
+    from .ffmpeg_utils import trim_border_silence, trim_all_silence
+    try:
+        file = request.files.get('file')
+        if not file:
+            return jsonify({'error': 'No file provided'}), 400
+
+        mode = request.form.get('mode', 'borders')
+        threshold = request.form.get('threshold', '-50dB')
+        min_silence = float(request.form.get('min_silence', 0.1))
+
+        ext = os.path.splitext(file.filename)[1].lower()
+        source_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}{ext}")
+        file.save(source_path)
+
+        output_ext = ext or '.wav'
+        output_filename = f"trimmed_{file.filename}"
+        output_path = os.path.join(app.config['OUTPUT_FOLDER'], f"{uuid.uuid4()}{output_ext}")
+
+        if mode == 'all':
+            trim_all_silence(source_path, output_path, threshold, min_silence)
+        else:
+            trim_border_silence(source_path, output_path, threshold, min_silence)
+
+        os.remove(source_path)
+        return send_file(output_path, as_attachment=True, download_name=output_filename)
+
+    except Exception as e:
+        logger.error(f"Error in trim: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# ─── Profile ─────────────────────────────────────────────────
+
+@app.route('/api/profile', methods=['GET', 'POST'])
+def profile_endpoint():
+    """Manage processing profiles."""
+    from .profile_manager import load_profile, save_profile, list_saved_profiles
+    if request.method == 'GET':
+        profiles = list_saved_profiles()
+        config = load_profile()
+        return jsonify({
+            'current_config': config,
+            'available_profiles': profiles,
+        })
+
+    # POST: save a profile
+    data = request.get_json() or {}
+    profile_path = data.get('path', '')
+    profile_data = data.get('profile', {})
+    if profile_path and profile_data:
+        save_profile(profile_data, profile_path)
+        return jsonify({'saved': True, 'path': profile_path})
+    return jsonify({'error': 'path and profile data required'}), 400
+
+
+# ─── System Info ─────────────────────────────────────────────
+
+@app.route('/api/system', methods=['GET'])
+def system_info():
+    """Get system resource information."""
+    from .concurrency_guard import get_system_summary, get_memory_usage_pct
+    from .ffmpeg_utils import get_ffmpeg_info, check_ffmpeg_compat
+    from .abogen_integration import is_abogen_available
+    import platform
+
+    return jsonify({
+        'platform': platform.system(),
+        'release': platform.release(),
+        'python': platform.python_version(),
+        'system': get_system_summary(),
+        'memory_usage_pct': get_memory_usage_pct(),
+        'ffmpeg': get_ffmpeg_info(),
+        'ffmpeg_compat': check_ffmpeg_compat(),
+        'abogen_available': is_abogen_available(),
+    })
+
+
+# ─── Chapter Import ──────────────────────────────────────────
+
+@app.route('/api/chapters/import', methods=['POST'])
+def chapters_import():
+    """Import chapters from a file (CUE, Audacity, VTT, CSV, JSON)."""
+    from .chapter_io import import_chapters
+    try:
+        file = request.files.get('file')
+        if not file:
+            return jsonify({'error': 'No file provided'}), 400
+
+        ext = os.path.splitext(file.filename)[1].lower()
+        source_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}{ext}")
+        file.save(source_path)
+
+        try:
+            chapters = import_chapters(source_path)
+            return jsonify({'chapters': chapters, 'count': len(chapters)})
+        finally:
+            os.remove(source_path)
+
+    except Exception as e:
+        logger.error(f"Error in chapters_import: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/chapters/export', methods=['POST'])
+def chapters_export():
+    """Export chapters to a file format."""
+    from .chapter_io import export_chapters
+    try:
+        data = request.get_json() or {}
+        chapters = data.get('chapters', [])
+        fmt = data.get('format', 'vtt')
+        if not chapters:
+            return jsonify({'error': 'No chapters provided'}), 400
+
+        ext_map = {'vtt': '.vtt', 'cue': '.cue', 'csv': '.csv', 'json': '.json', 'chapters.txt': '.txt'}
+        output_ext = ext_map.get(fmt, '.txt')
+        output_path = os.path.join(app.config['OUTPUT_FOLDER'], f"chapters_{uuid.uuid4().hex[:8]}{output_ext}")
+
+        export_chapters(chapters, output_path, format=fmt)
+        return send_file(output_path, as_attachment=True,
+                        download_name=f"chapters{output_ext}")
+
+    except Exception as e:
+        logger.error(f"Error in chapters_export: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 # ─── Cleanup (old files) ─────────────────────────────────────
 
 @app.route('/api/cleanup', methods=['POST'])
 def cleanup():
     """Clean up old uploaded and output files (older than 1 hour)."""
-    cutoff = time.time() - 3600  # 1 hour
+    cutoff = time.time() - 3600
     cleaned = 0
     for folder in [app.config['UPLOAD_FOLDER'], app.config['OUTPUT_FOLDER']]:
         for fname in os.listdir(folder):

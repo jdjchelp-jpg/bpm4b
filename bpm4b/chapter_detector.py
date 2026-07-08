@@ -2,12 +2,20 @@
 Chapter Detector Module
 Detects chapter boundaries from extracted document text,
 extracts chapter names, and normalizes numbers to their word form.
-Ported from Node.js chapter-detector.js
+Enhanced in v13 to delegate Roman numeral handling to text_processor.
+Portions ported from Node.js chapter-detector.js
 """
 
 import re
 
-# Map of number words to their numeric values
+# Delegate Roman numeral and number handling to text_processor
+from .text_processor import (
+    roman_to_int,
+    int_to_cardinal_words as int_to_words,
+    normalize_chapter_title as normalize_title,
+    resolve_roman_numerals_in_text,
+)
+
 WORD_TO_NUMBER = {
     'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
     'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
@@ -16,45 +24,6 @@ WORD_TO_NUMBER = {
     'thirty': 30, 'forty': 40, 'fifty': 50, 'sixty': 60,
     'seventy': 70, 'eighty': 80, 'ninety': 90, 'hundred': 100,
 }
-
-INT_TO_WORDS = {
-    0: 'zero', 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five',
-    6: 'six', 7: 'seven', 8: 'eight', 9: 'nine', 10: 'ten',
-    11: 'eleven', 12: 'twelve', 13: 'thirteen', 14: 'fourteen', 15: 'fifteen',
-    16: 'sixteen', 17: 'seventeen', 18: 'eighteen', 19: 'nineteen', 20: 'twenty',
-    30: 'thirty', 40: 'forty', 50: 'fifty', 60: 'sixty',
-    70: 'seventy', 80: 'eighty', 90: 'ninety',
-}
-
-
-def int_to_words(n):
-    """Convert integer to English words (0-9999)."""
-    if n < 0 or n > 9999:
-        return str(n)
-    if n in INT_TO_WORDS:
-        return INT_TO_WORDS[n]
-    if n < 100:
-        tens, ones = divmod(n, 10)
-        return INT_TO_WORDS[tens * 10] + ('-' + INT_TO_WORDS[ones] if ones else '')
-    if n < 1000:
-        hundreds, rest = divmod(n, 100)
-        base = INT_TO_WORDS[hundreds] + ' hundred'
-        return base + (' ' + int_to_words(rest) if rest else '')
-    thousands, rest = divmod(n, 1000)
-    base = int_to_words(thousands) + ' thousand'
-    return base + (' ' + int_to_words(rest) if rest else '')
-
-
-def roman_to_int(roman):
-    """Roman numeral to integer."""
-    roman_map = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}
-    result = 0
-    upper = roman.upper()
-    for i, ch in enumerate(upper):
-        current = roman_map.get(ch, 0)
-        nxt = roman_map.get(upper[i + 1], 0) if i + 1 < len(upper) else 0
-        result += current if current >= nxt else -current
-    return result
 
 
 def parse_chapter_number(num_str):
